@@ -1,5 +1,6 @@
 import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { TypeOrmModule } from './modules/typeorm.module';
 
 @Module({
   imports: [
@@ -7,6 +8,7 @@ import { ConfigModule } from '@nestjs/config';
       isGlobal: true,
       cache: true,
     }),
+    TypeOrmModule,
   ],
   providers: [Logger],
 })
