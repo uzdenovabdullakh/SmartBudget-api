@@ -1,0 +1,20 @@
+name: PR open
+on:
+    [pull_request]
+
+jobs:
+  lint-and-test:
+    name: Pull request lint and test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - name: install deps
+        run: npm ci
+      - name: lint
+        run: npm run lint
+      - name: tests
+        run: npm run test
