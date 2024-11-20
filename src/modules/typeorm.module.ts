@@ -1,31 +1,16 @@
 import { Global, Module } from '@nestjs/common';
 import { DataSource } from 'typeorm';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import connectionDataSource from '../data-source';
 
 @Global()
 @Module({
-  imports: [ConfigModule],
   providers: [
     {
       provide: DataSource,
-      useFactory: async (configService: ConfigService) => {
-        const connection = new DataSource({
-          type: 'postgres',
-          url: configService.get('DATABASE_URL'),
-          migrationsRun: false,
-          migrationsTransactionMode: 'all',
-          entities: [`${__dirname}/entities/**/*{.ts,.js}`],
-          migrations: [`${__dirname}/migrations/**/*{.ts,.js}`],
-          synchronize: false,
-          cache: false,
-        });
-
-        await connection.initialize();
-        console.log('Data Source has been initialized');
-
-        return connection;
+      useFactory: async () => {
+        await connectionDataSource.initialize();
+        return connectionDataSource;
       },
-      inject: [ConfigService],
     },
   ],
   exports: [DataSource],
