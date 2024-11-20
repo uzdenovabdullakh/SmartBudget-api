@@ -6,7 +6,7 @@
   "private": true,
   "license": "UNLICENSED",
   "scripts": {
-    "prebuild": "rimraf dist",
+    "prebuild": "rimraf dist coverage",
     "build": "nest build",
     "prettier-check": "prettier . --check",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
