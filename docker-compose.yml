@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  app:
+    container_name: smartbudget-app-service
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - ${PORT}:${PORT}
+    command: "npm run start:prod"
+    env_file:
+      - .env
+    networks:
+      - webnet
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+ 
+  postgres:
+    container_name: smartbudget-postgres-db
+    image: postgres:16-alpine
+    networks:
+      - webnet
+    env_file:
+      - .env
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - pgdata:/var/lib/postgresql/data  
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}'"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+networks:
+  webnet:
+volumes:
+  pgdata:
