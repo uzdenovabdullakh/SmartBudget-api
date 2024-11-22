@@ -6,8 +6,8 @@ export default defineConfig({
     environment: 'node',
     coverage: {
       reporter: ['text', 'html'],
-      exclude: ['src/migrations'],
-      include: ['src/**/*.ts'],
+      exclude: ['src'],
+      include: ['test/**/*.ts'],
       provider: 'v8',
     },
   },
