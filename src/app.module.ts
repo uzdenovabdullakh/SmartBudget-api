@@ -2,6 +2,7 @@ import { Logger, Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from './modules/typeorm.module';
 import { MailModule } from './modules/mail.module';
+import { UsersModule } from './modules/users.module';
 
 @Module({
   imports: [
@@ -11,6 +12,7 @@ import { MailModule } from './modules/mail.module';
     }),
     TypeOrmModule,
     MailModule,
+    UsersModule,
   ],
   providers: [Logger],
 })
