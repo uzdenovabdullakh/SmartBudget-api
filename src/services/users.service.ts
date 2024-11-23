@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { CreateUserDto } from 'src/types/dto/create-user.dto';
+import { RestoreUserDto } from 'src/types/dto/restore-user.dto';
 import { UpdateUserDto } from 'src/types/dto/update-user.dto';
 import { UserInfo } from 'src/types/user.types';
 import { Not, Repository } from 'typeorm';
@@ -62,6 +63,20 @@ export class UsersService {
 
   async remove(id: string) {
     await this.findOne(id);
-    await this.userRepository.delete({ id });
+    await this.userRepository.softDelete({ id });
+  }
+
+  async restore(dto: RestoreUserDto) {
+    const user = await this.userRepository.findOne({
+      where: {
+        email: dto.email,
+      },
+      withDeleted: true,
+    });
+    if (!user) throw ApiException.notFound('User not found!');
+
+    await this.userRepository.restore({
+      id: user.id,
+    });
   }
 }
