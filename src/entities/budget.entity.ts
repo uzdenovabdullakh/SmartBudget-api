@@ -18,7 +18,7 @@ export class Budget extends Timestamps {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: false, length: 128 })
+  @Column({ type: 'varchar', nullable: false, length: 128 })
   name: string;
 
   @Column({

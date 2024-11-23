@@ -17,7 +17,7 @@ export class Category extends Timestamps {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: false, length: 128 })
+  @Column({ nullable: false, length: 128, type: 'varchar' })
   type: string;
 
   @Column({ nullable: true, type: 'money', name: 'limit_amount' })
