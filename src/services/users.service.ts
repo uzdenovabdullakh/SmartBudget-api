@@ -17,6 +17,7 @@ export class UsersService {
   async create(dto: CreateUserDto): Promise<UserInfo> {
     const findUser = await this.userRepository.findOne({
       where: { email: dto.email },
+      withDeleted: true,
     });
     if (findUser) {
       throw ApiException.badRequest('User already exist!');
@@ -50,6 +51,7 @@ export class UsersService {
           email: dto.email,
           id: Not(id),
         },
+        withDeleted: true,
       });
       if (existEmail)
         throw ApiException.badRequest('User with this email already exist!');
