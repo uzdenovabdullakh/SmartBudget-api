@@ -8,16 +8,21 @@ export class User extends Timestamps {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: false, unique: true, length: 64 })
+  @Column({ type: 'varchar', nullable: false, unique: true, length: 64 })
   email: string;
 
-  @Column({ nullable: false, length: 64 })
+  @Column({ type: 'varchar', nullable: false, length: 64 })
   login: string;
 
-  @Column({ nullable: true, length: 128 })
+  @Column({ type: 'varchar', nullable: true, length: 128 })
   password?: string;
 
-  @Column({ name: 'is_activated', nullable: false, default: false })
+  @Column({
+    name: 'is_activated',
+    nullable: false,
+    default: false,
+    type: 'bool',
+  })
   isActivated: boolean;
 
   @Column({

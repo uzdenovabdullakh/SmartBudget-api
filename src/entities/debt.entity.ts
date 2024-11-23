@@ -18,6 +18,7 @@ export class Debt extends Timestamps {
   @Column({
     nullable: false,
     length: 128,
+    type: 'varchar',
   })
   creditor: string;
 

@@ -21,7 +21,7 @@ export class Reminder extends Timestamps {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ length: 128, nullable: false })
+  @Column({ type: 'varchar', length: 128, nullable: false })
   title: string;
 
   @Column({

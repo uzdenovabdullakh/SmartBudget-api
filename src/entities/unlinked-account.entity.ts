@@ -8,7 +8,7 @@ export class UnlinkedAccount extends Timestamps {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: false, length: 64 })
+  @Column({ type: 'varchar', nullable: false, length: 64 })
   name: string;
 
   @Column({
