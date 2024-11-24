@@ -33,7 +33,11 @@ export class AuthService {
   }
 
   async generateTokensToResponse(user: User) {
-    const acessToken = await this.jwtService.generateToken({ ...user }, '15m');
+    const { id, email, login, isActivated } = user;
+    const acessToken = await this.jwtService.generateToken(
+      { id, email, login, isActivated },
+      '15m',
+    );
     const refreshToken = await this.createToken(user, TokensType.REFRESH_TOKEN);
 
     return { acessToken, refreshToken };
