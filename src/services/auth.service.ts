@@ -139,4 +139,15 @@ export class AuthService {
 
     await this.updatePassword(user, newPassword);
   }
+
+  async logout(user: User, refreshToken: string) {
+    const tokenEntity = await this.tokenRepository.findOne({
+      where: { token: refreshToken, user: { id: user.id } },
+      relations: ['user'],
+    });
+
+    if (tokenEntity) {
+      await this.tokenRepository.remove(tokenEntity);
+    }
+  }
 }

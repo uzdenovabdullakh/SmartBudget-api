@@ -19,12 +19,14 @@ import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import { ChangePasswordDto } from 'src/types/dto/change-password.dto';
 import { ConfirmSignUpDto } from 'src/types/dto/confirm-signup.dto';
 import { CreateUserDto } from 'src/types/dto/create-user.dto';
+import { LogoutDto } from 'src/types/dto/logout.dto';
 import { RefreshTokenDto } from 'src/types/dto/refresh-token.dto';
 import { ResetPasswordRequestDto } from 'src/types/dto/reset-password-request.dto';
 import { ResetPasswordDto } from 'src/types/dto/reset-password.dto';
 import { ChangePasswordSchema } from 'src/validation/change-password.schema';
 import { ConfirmSignUpSchema } from 'src/validation/confirm-signup.schema';
 import { CreateUserSchema } from 'src/validation/create-user.schema';
+import { LogoutSchema } from 'src/validation/logout.schema';
 import { RefreshTokenSchema } from 'src/validation/refresh-token.schema';
 import { ResetPasswordRequestSchema } from 'src/validation/reset-password-request.schema';
 import { ResetPasswordSchema } from 'src/validation/reset-password.schema';
@@ -138,5 +140,12 @@ export class AuthController {
     const user = req.user;
     await this.authService.changePassword(user, dto);
     return { message: 'Password changed successfully' };
+  }
+
+  @Post('logout')
+  @UsePipes(new ZodValidationPipe(LogoutSchema))
+  async logout(@Req() req: AuthenticationRequest, @Body() dto: LogoutDto) {
+    const user = req.user;
+    await this.authService.logout(user, dto.refreshToken);
   }
 }
