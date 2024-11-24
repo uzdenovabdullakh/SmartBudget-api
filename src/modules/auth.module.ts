@@ -8,14 +8,11 @@ import { AuthService } from 'src/services/auth.service';
 import { JwtTokenModule } from './jwt-token.module';
 import { UsersService } from 'src/services/users.service';
 import { MailService } from 'src/services/mail.service';
+import { BcryptService } from 'src/services/bcrypt.service';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User, Token]),
-    ConfigModule,
-    JwtTokenModule,
-  ],
+  imports: [TypeOrmModule.forFeature([User, Token]), JwtTokenModule],
   controllers: [AuthController],
-  providers: [AuthService, UsersService, MailService],
+  providers: [AuthService, UsersService, MailService, BcryptService],
 })
 export class AuthModule {}

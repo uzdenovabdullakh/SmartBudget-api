@@ -1,12 +1,11 @@
-import * as bcrypt from 'bcrypt';
 import { Injectable } from '@nestjs/common';
 import { TokensType } from 'src/constants/enums';
 import { Repository } from 'typeorm';
 import { Token } from 'src/entities/token.entity';
 import { User } from 'src/entities/user.entity';
 import { JwtTokenService } from './jwt.service';
-import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
+import { BcryptService } from './bcrypt.service';
 
 @Injectable()
 export class AuthService {
@@ -16,12 +15,8 @@ export class AuthService {
     @InjectRepository(Token)
     private readonly tokenRepository: Repository<Token>,
     private readonly jwtService: JwtTokenService,
-    private readonly configService: ConfigService,
+    private readonly bcryptService: BcryptService,
   ) {}
-
-  private getSalt() {
-    return parseInt(this.configService.get<string>('SALT_ROUNDS'));
-  }
 
   async createToken(user: User, tokenType: TokensType): Promise<string> {
     const { id, email, login, isActivated } = user;
@@ -54,7 +49,7 @@ export class AuthService {
   }
 
   async activateUser(user: User, password: string): Promise<void> {
-    user.password = await bcrypt.hash(password, this.getSalt());
+    user.password = await this.bcryptService.hash(password);
     user.isActivated = true;
     await this.userRepository.save(user);
 
@@ -65,7 +60,7 @@ export class AuthService {
   }
 
   async updatePassword(user: User, newPassword: string): Promise<void> {
-    user.password = await bcrypt.hash(newPassword, this.getSalt());
+    user.password = await this.bcryptService.hash(newPassword);
     await this.userRepository.save(user);
 
     await this.tokenRepository.delete({
