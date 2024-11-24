@@ -4,20 +4,19 @@ import {
   Post,
   Body,
   Patch,
-  Param,
   Delete,
   Res,
-  ParseUUIDPipe,
   HttpStatus,
   UsePipes,
+  Req,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { Public } from 'src/decorators/public.decorator';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { UsersService } from 'src/services/users.service';
-import { CreateUserDto } from 'src/types/dto/create-user.dto';
+import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import { RestoreUserDto } from 'src/types/dto/restore-user.dto';
 import { UpdateUserDto } from 'src/types/dto/update-user.dto';
-import { CreateUserSchema } from 'src/validation/create-user.schema';
 import { RestoreUserSchema } from 'src/validation/restore-user.schema';
 import { UpdateUserSchema } from 'src/validation/update-user.schema';
 
@@ -25,43 +24,34 @@ import { UpdateUserSchema } from 'src/validation/update-user.schema';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Post()
-  @UsePipes(new ZodValidationPipe(CreateUserSchema))
-  async create(@Res() res: Response, @Body() dto: CreateUserDto) {
-    const data = await this.usersService.create(dto);
-    return res.status(HttpStatus.CREATED).send({
-      data,
-      message: 'User was successfully created',
-    });
-  }
-
-  @Get(':id')
-  async findOne(@Res() res: Response, @Param('id', ParseUUIDPipe) id: string) {
-    const user = await this.usersService.findOne(id);
+  @Get()
+  async findOne(@Req() req: AuthenticationRequest, @Res() res: Response) {
+    const user = await this.usersService.findOne(req.user.id);
     return res.status(HttpStatus.OK).send(user);
   }
 
-  @Patch(':id')
+  @Patch()
   async update(
+    @Req() req: AuthenticationRequest,
     @Res() res: Response,
-    @Param('id', ParseUUIDPipe) id: string,
     @Body(new ZodValidationPipe(UpdateUserSchema)) dto: UpdateUserDto,
   ) {
-    const data = await this.usersService.update(id, dto);
+    const data = await this.usersService.update(req.user.id, dto);
     return res.status(HttpStatus.OK).send({
       data,
       message: 'User was successfully updated',
     });
   }
 
-  @Delete(':id')
-  async remove(@Res() res: Response, @Param('id', ParseUUIDPipe) id: string) {
-    await this.usersService.remove(id);
+  @Delete()
+  async remove(@Req() req: AuthenticationRequest, @Res() res: Response) {
+    await this.usersService.remove(req.user.id);
     return res.status(HttpStatus.OK).send({
       message: 'User was successfully removed',
     });
   }
 
+  @Public()
   @Post('restore')
   @UsePipes(new ZodValidationPipe(RestoreUserSchema))
   async restore(@Res() res: Response, @Body() dto: RestoreUserDto) {

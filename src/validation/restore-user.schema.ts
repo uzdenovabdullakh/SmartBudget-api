@@ -2,6 +2,6 @@ import { z } from 'zod';
 
 export const RestoreUserSchema = z
   .object({
-    email: z.string().email().max(64),
+    email: z.string().email({ message: 'Invalid email address' }).max(64),
   })
   .required();

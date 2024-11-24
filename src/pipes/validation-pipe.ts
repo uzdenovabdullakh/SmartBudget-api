@@ -13,7 +13,7 @@ export class ZodValidationPipe implements PipeTransform {
       if (error instanceof ZodError) {
         const errorMessages = JSON.parse(error.message)
           .map((d) => d.message.replace(/\"/g, ''))
-          .join();
+          .join('\n');
         throw ApiException.badRequest(errorMessages);
       }
       throw error;
