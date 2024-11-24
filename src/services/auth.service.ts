@@ -125,10 +125,8 @@ export class AuthService {
     });
   }
 
-  async changePassword(id: string, dto: ChangePasswordDto) {
+  async changePassword(user: User, dto: ChangePasswordDto) {
     const { newPassword, currentPassword } = dto;
-
-    const user = await this.userRepository.findOneBy({ id });
 
     const isMatch = await this.bcryptService.comparePasswords(
       currentPassword,

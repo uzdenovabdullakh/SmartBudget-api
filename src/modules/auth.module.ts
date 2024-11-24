@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthController } from 'src/controllers/auth.controller';
 import { Token } from 'src/entities/token.entity';
@@ -11,6 +10,7 @@ import { MailService } from 'src/services/mail.service';
 import { BcryptService } from 'src/services/bcrypt.service';
 import { PassportModule } from '@nestjs/passport';
 import { LocalStrategy } from 'src/strategies/local.stategy';
+import { JwtStrategy } from 'src/strategies/jwt.strategy';
 
 @Module({
   imports: [
@@ -25,6 +25,7 @@ import { LocalStrategy } from 'src/strategies/local.stategy';
     MailService,
     BcryptService,
     LocalStrategy,
+    JwtStrategy,
   ],
 })
 export class AuthModule {}

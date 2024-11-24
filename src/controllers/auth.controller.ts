@@ -3,14 +3,13 @@ import {
   Post,
   Body,
   UsePipes,
-  Param,
-  ParseUUIDPipe,
   Patch,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { TokensType } from 'src/constants/enums';
 import { ApiException } from 'src/exceptions/api.exception';
+import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 import { LocalAuthGuard } from 'src/guards/local-auth.guard';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { AuthService } from 'src/services/auth.service';
@@ -125,12 +124,14 @@ export class AuthController {
     return { message: 'Password updated successfully' };
   }
 
-  @Patch('change-password/:id')
+  @Patch('change-password')
+  @UseGuards(JwtAuthGuard)
   async changePassword(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticationRequest,
     @Body(new ZodValidationPipe(ChangePasswordSchema)) dto: ChangePasswordDto,
   ) {
-    await this.authService.changePassword(id, dto);
+    const user = req.user;
+    await this.authService.changePassword(user, dto);
     return { message: 'Password changed successfully' };
   }
 }
