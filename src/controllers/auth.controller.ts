@@ -8,8 +8,8 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { TokensType } from 'src/constants/enums';
+import { Public } from 'src/decorators/public.decorator';
 import { ApiException } from 'src/exceptions/api.exception';
-import { JwtAuthGuard } from 'src/guards/jwt-auth.guard';
 import { LocalAuthGuard } from 'src/guards/local-auth.guard';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { AuthService } from 'src/services/auth.service';
@@ -37,6 +37,7 @@ export class AuthController {
     private readonly userService: UsersService,
   ) {}
 
+  @Public()
   @Post('login')
   @UseGuards(LocalAuthGuard)
   async login(@Req() req: AuthenticationRequest) {
@@ -44,6 +45,7 @@ export class AuthController {
     return await this.authService.generateTokensToResponse(user);
   }
 
+  @Public()
   @Post('refresh-token')
   @UsePipes(new ZodValidationPipe(RefreshTokenSchema))
   async refreshTokens(@Body() dto: RefreshTokenDto) {
@@ -51,6 +53,7 @@ export class AuthController {
     return tokens;
   }
 
+  @Public()
   @Post('signup')
   @UsePipes(new ZodValidationPipe(CreateUserSchema))
   async signup(@Body() dto: CreateUserDto) {
@@ -71,6 +74,7 @@ export class AuthController {
     return { message: 'Verification email sent' };
   }
 
+  @Public()
   @Post('confirm')
   @UsePipes(new ZodValidationPipe(ConfirmSignUpSchema))
   async confirm(@Body() dto: ConfirmSignUpDto) {
@@ -88,6 +92,7 @@ export class AuthController {
     return { message: 'Account confirmed successfully' };
   }
 
+  @Public()
   @Post('reset-password-request')
   @UsePipes(new ZodValidationPipe(ResetPasswordRequestSchema))
   async resetPasswordRequest(@Body() dto: ResetPasswordRequestDto) {
@@ -107,6 +112,7 @@ export class AuthController {
     return { message: 'Password reset email sent' };
   }
 
+  @Public()
   @Post('reset-password')
   @UsePipes(new ZodValidationPipe(ResetPasswordSchema))
   async resetPassword(@Body() dto: ResetPasswordDto) {
@@ -125,7 +131,6 @@ export class AuthController {
   }
 
   @Patch('change-password')
-  @UseGuards(JwtAuthGuard)
   async changePassword(
     @Req() req: AuthenticationRequest,
     @Body(new ZodValidationPipe(ChangePasswordSchema)) dto: ChangePasswordDto,
