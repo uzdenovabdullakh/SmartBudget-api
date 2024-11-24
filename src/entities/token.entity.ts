@@ -14,7 +14,7 @@ export class Token extends Timestamps {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: false })
+  @Column({ type: 'text', nullable: false })
   token: string;
 
   @Column({

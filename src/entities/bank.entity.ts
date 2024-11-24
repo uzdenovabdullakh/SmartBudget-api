@@ -7,7 +7,7 @@ export class Bank extends Timestamps {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ nullable: false, length: 128 })
+  @Column({ type: 'varchar', nullable: false, length: 128 })
   name: string;
 
   @Column({ nullable: false, type: 'text' })

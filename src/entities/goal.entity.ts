@@ -22,6 +22,7 @@ export class Goal extends Timestamps {
     nullable: true,
     default: null,
     length: 64,
+    type: 'varchar',
   })
   name: string;
 
