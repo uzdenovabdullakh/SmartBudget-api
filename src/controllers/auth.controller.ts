@@ -1,14 +1,24 @@
-import { Controller, Post, Body, UsePipes } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UsePipes,
+  Param,
+  ParseUUIDPipe,
+  Patch,
+} from '@nestjs/common';
 import { TokensType } from 'src/constants/enums';
 import { ApiException } from 'src/exceptions/api.exception';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { AuthService } from 'src/services/auth.service';
 import { MailService } from 'src/services/mail.service';
 import { UsersService } from 'src/services/users.service';
+import { ChangePasswordDto } from 'src/types/dto/change-password.dto';
 import { ConfirmSignUpDto } from 'src/types/dto/confirm-signup.dto';
 import { CreateUserDto } from 'src/types/dto/create-user.dto';
 import { ResetPasswordRequestDto } from 'src/types/dto/reset-password-request.dto';
 import { ResetPasswordDto } from 'src/types/dto/reset-password.dto';
+import { ChangePasswordSchema } from 'src/validation/change-password.schema';
 import { ConfirmSignUpSchema } from 'src/validation/confirm-signup.schema';
 import { CreateUserSchema } from 'src/validation/create-user.schema';
 import { ResetPasswordRequestSchema } from 'src/validation/reset-password-request.schema';
@@ -93,5 +103,14 @@ export class AuthController {
     await this.authService.updatePassword(user, newPassword);
 
     return { message: 'Password updated successfully' };
+  }
+
+  @Patch('change-password/:id')
+  async changePassword(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(ChangePasswordSchema)) dto: ChangePasswordDto,
+  ) {
+    await this.authService.changePassword(id, dto);
+    return { message: 'Password changed successfully' };
   }
 }

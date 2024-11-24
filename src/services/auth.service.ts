@@ -6,6 +6,8 @@ import { User } from 'src/entities/user.entity';
 import { JwtTokenService } from './jwt.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BcryptService } from './bcrypt.service';
+import { ChangePasswordDto } from 'src/types/dto/change-password.dto';
+import { ApiException } from 'src/exceptions/api.exception';
 
 @Injectable()
 export class AuthService {
@@ -67,5 +69,21 @@ export class AuthService {
       user,
       tokenType: TokensType.RESET_PASSWORD,
     });
+  }
+
+  async changePassword(id: string, dto: ChangePasswordDto) {
+    const { newPassword, currentPassword } = dto;
+
+    const user = await this.userRepository.findOneBy({ id });
+
+    const isMatch = await this.bcryptService.comparePasswords(
+      currentPassword,
+      user.password,
+    );
+    if (!isMatch) {
+      throw ApiException.badRequest('Current password is incorrect');
+    }
+
+    await this.updatePassword(user, newPassword);
   }
 }
