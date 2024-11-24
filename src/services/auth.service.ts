@@ -54,7 +54,8 @@ export class AuthService {
 
     if (tokenType == TokensType.REFRESH_TOKEN) {
       const userTokens = await this.tokenRepository.find({
-        where: { user, tokenType: TokensType.REFRESH_TOKEN },
+        where: { user: { id: user.id }, tokenType: TokensType.REFRESH_TOKEN },
+        relations: ['user'],
       });
 
       if (userTokens.length >= 3) {
