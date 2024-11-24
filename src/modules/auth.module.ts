@@ -9,10 +9,22 @@ import { JwtTokenModule } from './jwt-token.module';
 import { UsersService } from 'src/services/users.service';
 import { MailService } from 'src/services/mail.service';
 import { BcryptService } from 'src/services/bcrypt.service';
+import { PassportModule } from '@nestjs/passport';
+import { LocalStrategy } from 'src/strategies/local.stategy';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Token]), JwtTokenModule],
+  imports: [
+    TypeOrmModule.forFeature([User, Token]),
+    JwtTokenModule,
+    PassportModule,
+  ],
   controllers: [AuthController],
-  providers: [AuthService, UsersService, MailService, BcryptService],
+  providers: [
+    AuthService,
+    UsersService,
+    MailService,
+    BcryptService,
+    LocalStrategy,
+  ],
 })
 export class AuthModule {}

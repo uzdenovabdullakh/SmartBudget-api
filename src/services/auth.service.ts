@@ -8,6 +8,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { BcryptService } from './bcrypt.service';
 import { ChangePasswordDto } from 'src/types/dto/change-password.dto';
 import { ApiException } from 'src/exceptions/api.exception';
+import { tokenLifeTime } from 'src/constants/constants';
 
 @Injectable()
 export class AuthService {
@@ -20,17 +21,66 @@ export class AuthService {
     private readonly bcryptService: BcryptService,
   ) {}
 
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.userRepository.findOneBy({ email });
+    if (
+      user &&
+      (await this.bcryptService.comparePasswords(password, user.password))
+    ) {
+      return user;
+    }
+    return null;
+  }
+
+  async generateTokensToResponse(user: User) {
+    const acessToken = await this.jwtService.generateToken({ ...user }, '15m');
+    const refreshToken = await this.createToken(user, TokensType.REFRESH_TOKEN);
+
+    return { acessToken, refreshToken };
+  }
+
   async createToken(user: User, tokenType: TokensType): Promise<string> {
     const { id, email, login, isActivated } = user;
     const token = await this.jwtService.generateToken(
       { id, email, login, isActivated },
-      tokenType == TokensType.ACTIVATE_ACCOUNT ? '1d' : '1h',
+      tokenLifeTime[tokenType],
     );
 
     const tokenEntity = new Token(user, token, tokenType);
+
+    if (tokenType == TokensType.REFRESH_TOKEN) {
+      const userTokens = await this.tokenRepository.find({
+        where: { user, tokenType: TokensType.REFRESH_TOKEN },
+      });
+
+      if (userTokens.length >= 3) {
+        await this.tokenRepository.remove(
+          userTokens.slice(0, userTokens.length - 2),
+        );
+      }
+    }
     await this.tokenRepository.save(tokenEntity);
 
     return token;
+  }
+
+  async refreshTokens(refreshToken: string) {
+    const tokenEntity = await this.tokenRepository.findOne({
+      where: { token: refreshToken, tokenType: TokensType.REFRESH_TOKEN },
+      relations: ['user'],
+    });
+
+    if (!tokenEntity) {
+      throw ApiException.unauthorized('Invalid refresh token');
+    }
+
+    const isValid = await this.jwtService.validateToken(refreshToken);
+    if (!isValid) {
+      await this.tokenRepository.delete(tokenEntity);
+      throw ApiException.unauthorized('Expired refresh token');
+    }
+
+    return await this.generateTokensToResponse(tokenEntity.user);
   }
 
   async verifyToken(
