@@ -6,9 +6,9 @@ import { User } from 'src/entities/user.entity';
 import { JwtTokenService } from './jwt.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BcryptService } from './bcrypt.service';
-import { ChangePasswordDto } from 'src/types/dto/change-password.dto';
 import { ApiException } from 'src/exceptions/api.exception';
 import { tokenLifeTime } from 'src/constants/constants';
+import { ChangePasswordDto } from 'src/validation/change-password.schema';
 
 @Injectable()
 export class AuthService {
