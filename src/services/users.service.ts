@@ -2,10 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
-import { CreateUserDto } from 'src/types/dto/create-user.dto';
-import { RestoreUserDto } from 'src/types/dto/restore-user.dto';
-import { UpdateUserDto } from 'src/types/dto/update-user.dto';
 import { UserInfo } from 'src/types/user.types';
+import {
+  CreateUserDto,
+  RestoreUserDto,
+  UpdateUserDto,
+} from 'src/validation/user.schema';
 import { Not, Repository } from 'typeorm';
 
 @Injectable()

@@ -16,20 +16,24 @@ import { AuthService } from 'src/services/auth.service';
 import { MailService } from 'src/services/mail.service';
 import { UsersService } from 'src/services/users.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
-import { ChangePasswordDto } from 'src/types/dto/change-password.dto';
-import { ConfirmSignUpDto } from 'src/types/dto/confirm-signup.dto';
-import { CreateUserDto } from 'src/types/dto/create-user.dto';
-import { LogoutDto } from 'src/types/dto/logout.dto';
-import { RefreshTokenDto } from 'src/types/dto/refresh-token.dto';
-import { ResetPasswordRequestDto } from 'src/types/dto/reset-password-request.dto';
-import { ResetPasswordDto } from 'src/types/dto/reset-password.dto';
-import { ChangePasswordSchema } from 'src/validation/change-password.schema';
-import { ConfirmSignUpSchema } from 'src/validation/confirm-signup.schema';
-import { CreateUserSchema } from 'src/validation/create-user.schema';
-import { LogoutSchema } from 'src/validation/logout.schema';
-import { RefreshTokenSchema } from 'src/validation/refresh-token.schema';
-import { ResetPasswordRequestSchema } from 'src/validation/reset-password-request.schema';
-import { ResetPasswordSchema } from 'src/validation/reset-password.schema';
+import {
+  ChangePasswordDto,
+  ChangePasswordSchema,
+} from 'src/validation/change-password.schema';
+import {
+  ConfirmSignUpDto,
+  ConfirmSignUpSchema,
+} from 'src/validation/confirm-signup.schema';
+import { CreateUserDto, CreateUserSchema } from 'src/validation/user.schema';
+import {
+  ResetPasswordRequestDto,
+  ResetPasswordRequestSchema,
+} from 'src/validation/reset-password-request.schema';
+import {
+  ResetPasswordDto,
+  ResetPasswordSchema,
+} from 'src/validation/reset-password.schema';
+import { TokenDto, TokenSchema } from 'src/validation/token.schema';
 
 @Controller('auth')
 export class AuthController {
@@ -49,8 +53,8 @@ export class AuthController {
 
   @Public()
   @Post('refresh-token')
-  @UsePipes(new ZodValidationPipe(RefreshTokenSchema))
-  async refreshTokens(@Body() dto: RefreshTokenDto) {
+  @UsePipes(new ZodValidationPipe(TokenSchema))
+  async refreshTokens(@Body() dto: TokenDto) {
     const tokens = await this.authService.refreshTokens(dto.refreshToken);
     return tokens;
   }
@@ -143,8 +147,8 @@ export class AuthController {
   }
 
   @Post('logout')
-  @UsePipes(new ZodValidationPipe(LogoutSchema))
-  async logout(@Req() req: AuthenticationRequest, @Body() dto: LogoutDto) {
+  @UsePipes(new ZodValidationPipe(TokenSchema))
+  async logout(@Req() req: AuthenticationRequest, @Body() dto: TokenDto) {
     const user = req.user;
     await this.authService.logout(user, dto.refreshToken);
   }
