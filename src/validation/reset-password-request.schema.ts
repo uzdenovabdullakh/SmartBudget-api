@@ -5,3 +5,7 @@ export const ResetPasswordRequestSchema = z
     email: z.string().email({ message: 'Invalid email address' }),
   })
   .required();
+
+export type ResetPasswordRequestDto = z.infer<
+  typeof ResetPasswordRequestSchema
+>;
