@@ -12,6 +12,7 @@ import { Account } from './account.entity';
 import { Debt } from './debt.entity';
 import { Goal } from './goal.entity';
 import { Analytic } from './analytic.entity';
+import { BudgetSettings } from 'src/validation/budget.schema';
 
 @Entity({ name: 'budgets' })
 export class Budget extends Timestamps {
@@ -23,10 +24,10 @@ export class Budget extends Timestamps {
 
   @Column({
     nullable: false,
-    default: () => `'{}'`,
+    default: () => `'{"currency": "USD", "currencyPlacement": "before"}'`,
     type: 'jsonb',
   })
-  settings: object;
+  settings: BudgetSettings;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
@@ -47,7 +48,7 @@ export class Budget extends Timestamps {
   @OneToMany(() => Analytic, (analytic) => analytic.budget)
   analytics: Analytic[];
 
-  constructor(name: string, user: User, settings?: object) {
+  constructor(name: string, user: User, settings?: BudgetSettings) {
     super();
     this.name = name;
     this.user = user;
