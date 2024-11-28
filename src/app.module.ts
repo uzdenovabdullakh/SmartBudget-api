@@ -6,6 +6,7 @@ import { UsersModule } from './modules/users.module';
 import { AuthModule } from './modules/auth.module';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { BudgetsModule } from './modules/budgets.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
     MailModule,
     UsersModule,
     AuthModule,
+    BudgetsModule,
   ],
   providers: [
     Logger,
