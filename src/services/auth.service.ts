@@ -9,6 +9,7 @@ import { BcryptService } from './bcrypt.service';
 import { ApiException } from 'src/exceptions/api.exception';
 import { tokenLifeTime } from 'src/constants/constants';
 import { ChangePasswordDto } from 'src/validation/change-password.schema';
+import { parseDuration } from 'src/utils/helpers';
 
 @Injectable()
 export class AuthService {
@@ -23,13 +24,11 @@ export class AuthService {
 
   async validateUser(email: string, password: string): Promise<any> {
     const user = await this.userRepository.findOneBy({ email });
-    if (
-      user &&
-      (await this.bcryptService.comparePasswords(password, user.password))
-    ) {
-      return user;
+    if (!user || !user.password) return null;
+    if (!(await this.bcryptService.comparePasswords(password, user.password))) {
+      return null;
     }
-    return null;
+    return user;
   }
 
   async generateTokensToResponse(user: User) {
@@ -50,7 +49,10 @@ export class AuthService {
       tokenLifeTime[tokenType],
     );
 
-    const tokenEntity = new Token(user, token, tokenType);
+    const expirationDuration = parseDuration(tokenLifeTime[tokenType]);
+    const expirationTime = new Date(Date.now() + expirationDuration);
+
+    const tokenEntity = new Token(user, token, tokenType, expirationTime);
 
     if (tokenType == TokensType.REFRESH_TOKEN) {
       const userTokens = await this.tokenRepository.find({
