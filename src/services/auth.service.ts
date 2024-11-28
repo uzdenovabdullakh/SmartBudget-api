@@ -23,11 +23,29 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.userRepository.findOneBy({ email });
+    const user = await this.userRepository.findOne({
+      where: {
+        email,
+      },
+      withDeleted: true,
+    });
+
     if (!user || !user.password) return null;
-    if (!(await this.bcryptService.comparePasswords(password, user.password))) {
+
+    if (user.deletedAt) {
+      throw ApiException.conflictError(
+        'User is deleted. Please restore your account.',
+      );
+    }
+
+    const isPasswordValid = await this.bcryptService.comparePasswords(
+      password,
+      user.password,
+    );
+    if (!isPasswordValid) {
       return null;
     }
+
     return user;
   }
 
