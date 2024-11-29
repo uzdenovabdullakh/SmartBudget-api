@@ -8,7 +8,6 @@ import {
   UsePipes,
   Req,
 } from '@nestjs/common';
-import { Response } from 'express';
 import { Public } from 'src/decorators/public.decorator';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { UsersService } from 'src/services/users.service';

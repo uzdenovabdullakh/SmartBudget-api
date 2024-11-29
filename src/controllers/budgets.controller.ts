@@ -18,8 +18,8 @@ import {
   CreateBudgetDto,
   UpdateBudgetSchema,
   UpdateBudgetDto,
-  BudgetsIdsSchema,
 } from 'src/validation/budget.schema';
+import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
 
 @Controller('budgets')
 export class BudgetsController {
@@ -81,7 +81,7 @@ export class BudgetsController {
   }
 
   @Delete()
-  @UsePipes(new ZodValidationPipe(BudgetsIdsSchema))
+  @UsePipes(new ZodValidationPipe(ArrayOfIdsSchema))
   async deleteForever(
     @Req() req: AuthenticationRequest,
     @Body() dto: string[],
@@ -93,7 +93,7 @@ export class BudgetsController {
   }
 
   @Post('restore')
-  @UsePipes(new ZodValidationPipe(BudgetsIdsSchema))
+  @UsePipes(new ZodValidationPipe(ArrayOfIdsSchema))
   async restoreBudgets(
     @Req() req: AuthenticationRequest,
     @Body() dto: string[],
