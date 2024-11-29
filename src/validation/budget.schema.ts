@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { ArrayOfIdsSchema } from './array-of-ids.schema';
 
 const BudgetSettingsSchema = z.object({
   currency: z.enum(['USD', 'RUB', 'EUR']),
