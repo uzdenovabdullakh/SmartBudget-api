@@ -13,6 +13,7 @@ const connection = new DataSource({
   migrationsTransactionMode: 'all',
   entities: [`${__dirname}/entities/**/*{.ts,.js}`],
   migrations: [`${__dirname}/migrations/**/*{.ts,.js}`],
+  subscribers: [`${__dirname}/subscribers/**/*{.ts,.js}`],
   synchronize: false,
   cache: false,
 });
