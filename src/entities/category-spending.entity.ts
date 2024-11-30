@@ -7,10 +7,10 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Timestamps } from './timestamps.entity';
-import { Category } from './category.entity';
+import { BudgetsCategories } from './budgets-categories.entity';
 
 @Entity({ name: 'category_spending' })
-@Unique('uk_category_period', ['category', 'periodStart', 'periodEnd'])
+@Unique('uk_category_period', ['budgetCategory', 'periodStart', 'periodEnd'])
 export class CategorySpending extends Timestamps {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -24,21 +24,21 @@ export class CategorySpending extends Timestamps {
   @Column({ nullable: false, type: 'timestamp', name: 'period_end' })
   periodEnd: Date;
 
-  @OneToOne(() => Category, { onDelete: 'CASCADE', nullable: false })
+  @OneToOne(() => BudgetsCategories, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
-    name: 'category_id',
-    foreignKeyConstraintName: 'fk_category_spending_to_spending',
+    name: 'budget_category_id',
+    foreignKeyConstraintName: 'fk_category_spending_to_budget_category',
   })
-  category: Category;
+  budgetCategory: BudgetsCategories;
 
   constructor(
-    category: Category,
+    budgetCategory: BudgetsCategories,
     periodStart: Date,
     periodEnd: Date,
     spentAmount?: number,
   ) {
     super();
-    this.category = category;
+    this.budgetCategory = budgetCategory;
     this.periodStart = periodStart;
     this.periodEnd = periodEnd;
     this.spentAmount = spentAmount || 0;
