@@ -11,7 +11,7 @@ import { Timestamps } from './timestamps.entity';
 import { GoalsPeriod } from 'src/constants/enums';
 import { Budget } from './budget.entity';
 import { Reminder } from './reminder.entity';
-import { BudgetsCategories } from './budgets-categories.entity';
+import { Category } from './category.entity';
 
 @Entity({ name: 'goals' })
 export class Goal extends Timestamps {
@@ -65,8 +65,8 @@ export class Goal extends Timestamps {
   @OneToMany(() => Reminder, (reminder) => reminder.goal)
   reminder: Reminder[];
 
-  @OneToOne(() => BudgetsCategories, (budgetCategory) => budgetCategory.goal)
-  budgetCategory: BudgetsCategories;
+  @OneToOne(() => Category, (category) => category.goal)
+  account: Category;
 
   constructor(
     targetAmount: number,
