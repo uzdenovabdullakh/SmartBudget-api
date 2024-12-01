@@ -12,6 +12,7 @@ import { Goal } from './goal.entity';
 import { Transaction } from './transaction.entity';
 import { CategorySpending } from './category-spending.entity';
 import { Budget } from './budget.entity';
+import { CategoryGroup } from './category-group.entity';
 
 @Entity({ name: 'categories' })
 export class Category extends Timestamps {
@@ -19,7 +20,14 @@ export class Category extends Timestamps {
   id: string;
 
   @Column({ nullable: false, length: 128, type: 'varchar' })
-  type: string;
+  name: string;
+
+  @ManyToOne(() => CategoryGroup, (group) => group.categories, {
+    nullable: false,
+    onDelete: 'CASCADE',
+  })
+  @JoinColumn({ name: 'group_id' })
+  group: CategoryGroup;
 
   @ManyToOne(() => Budget, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
@@ -44,9 +52,9 @@ export class Category extends Timestamps {
   )
   categorySpending: CategorySpending;
 
-  constructor(type: string, budget: Budget, goal?: Goal) {
+  constructor(name: string, group: string, budget: Budget, goal?: Goal) {
     super();
-    this.type = type;
+    this.name = name;
     this.budget = budget;
     this.goal = goal;
   }
