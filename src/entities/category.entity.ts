@@ -5,12 +5,13 @@ import {
   JoinColumn,
   OneToMany,
   PrimaryGeneratedColumn,
+  ManyToOne,
 } from 'typeorm';
 import { Timestamps } from './timestamps.entity';
 import { Goal } from './goal.entity';
 import { Transaction } from './transaction.entity';
-import { CategoryLimitResetPeriod } from 'src/constants/enums';
 import { CategorySpending } from './category-spending.entity';
+import { Budget } from './budget.entity';
 
 @Entity({ name: 'categories' })
 export class Category extends Timestamps {
@@ -20,17 +21,12 @@ export class Category extends Timestamps {
   @Column({ nullable: false, length: 128, type: 'varchar' })
   type: string;
 
-  @Column({ nullable: true, type: 'money', name: 'limit_amount' })
-  limitAmount: number;
-
-  @Column({
-    default: CategoryLimitResetPeriod.NONE,
-    enum: CategoryLimitResetPeriod,
-    type: 'enum',
-    enumName: 'enum_category_limit_reset_period',
-    name: 'limit_reset_period',
+  @ManyToOne(() => Budget, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({
+    name: 'budget_id',
+    foreignKeyConstraintName: 'fk_categories_to_budget',
   })
-  limitResetPeriod: CategoryLimitResetPeriod;
+  budget: Budget;
 
   @OneToOne(() => Goal, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({
@@ -48,14 +44,10 @@ export class Category extends Timestamps {
   )
   categorySpending: CategorySpending;
 
-  constructor(
-    type: string,
-    limitAmount?: number,
-    limitResetPeriod?: CategoryLimitResetPeriod,
-  ) {
+  constructor(type: string, budget: Budget, goal?: Goal) {
     super();
     this.type = type;
-    this.limitAmount = limitAmount || null;
-    this.limitResetPeriod = limitResetPeriod || CategoryLimitResetPeriod.NONE;
+    this.budget = budget;
+    this.goal = goal;
   }
 }
