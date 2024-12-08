@@ -9,6 +9,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { BudgetsModule } from './modules/budgets.module';
 import { CronJobsModule } from './modules/cron-jobs.module';
 import { AccountsModule } from './modules/accounts.module';
+import { CategoriesModule } from './modules/categories.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AccountsModule } from './modules/accounts.module';
     BudgetsModule,
     CronJobsModule,
     AccountsModule,
+    CategoriesModule,
   ],
   providers: [
     Logger,
