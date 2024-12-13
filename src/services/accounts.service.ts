@@ -5,7 +5,7 @@ import { UnlinkedAccount } from 'src/entities/unlinked-account.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { CreateUnlinkedAccountDto } from 'src/validation/account.schema';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class AccountsService {
@@ -107,6 +107,7 @@ export class AccountsService {
     const accounts = await this.accountRepository.find({
       where: {
         id: In(ids),
+        deletedAt: Not(IsNull()),
         budget: {
           user: {
             id: user.id,
@@ -132,6 +133,7 @@ export class AccountsService {
     const accounts = await this.accountRepository.find({
       where: {
         id: In(ids),
+        deletedAt: Not(IsNull()),
         budget: {
           user: {
             id: user.id,

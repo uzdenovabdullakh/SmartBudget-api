@@ -4,7 +4,7 @@ import { Budget } from 'src/entities/budget.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { CreateBudgetDto, UpdateBudgetDto } from 'src/validation/budget.schema';
-import { In, Not, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class BudgetsService {
@@ -67,6 +67,7 @@ export class BudgetsService {
         user: {
           id: user.id,
         },
+        deletedAt: Not(IsNull()),
       },
       withDeleted: true,
     });
@@ -113,6 +114,7 @@ export class BudgetsService {
       where: {
         id: In(ids),
         user: { id: user.id },
+        deletedAt: Not(IsNull()),
       },
       withDeleted: true,
     });
@@ -133,6 +135,7 @@ export class BudgetsService {
       where: {
         id: In(ids),
         user: { id: user.id },
+        deletedAt: Not(IsNull()),
       },
       withDeleted: true,
     });

@@ -8,7 +8,7 @@ import {
   RestoreUserDto,
   UpdateUserDto,
 } from 'src/validation/user.schema';
-import { Not, Repository } from 'typeorm';
+import { IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -85,6 +85,7 @@ export class UsersService {
     const user = await this.userRepository.findOne({
       where: {
         email: dto.email,
+        deletedAt: Not(IsNull()),
       },
       withDeleted: true,
     });
