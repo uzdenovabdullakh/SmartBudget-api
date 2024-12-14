@@ -5,12 +5,14 @@ import {
   JoinColumn,
   OneToMany,
   PrimaryGeneratedColumn,
+  ManyToOne,
 } from 'typeorm';
 import { Timestamps } from './timestamps.entity';
 import { Goal } from './goal.entity';
 import { Transaction } from './transaction.entity';
-import { CategoryLimitResetPeriod } from 'src/constants/enums';
 import { CategorySpending } from './category-spending.entity';
+import { Budget } from './budget.entity';
+import { CategoryGroup } from './category-group.entity';
 
 @Entity({ name: 'categories' })
 export class Category extends Timestamps {
@@ -18,19 +20,21 @@ export class Category extends Timestamps {
   id: string;
 
   @Column({ nullable: false, length: 128, type: 'varchar' })
-  type: string;
+  name: string;
 
-  @Column({ nullable: true, type: 'money', name: 'limit_amount' })
-  limitAmount: number;
-
-  @Column({
-    default: CategoryLimitResetPeriod.NONE,
-    enum: CategoryLimitResetPeriod,
-    type: 'enum',
-    enumName: 'enum_category_limit_reset_period',
-    name: 'limit_reset_period',
+  @ManyToOne(() => CategoryGroup, (group) => group.categories, {
+    nullable: false,
+    onDelete: 'CASCADE',
   })
-  limitResetPeriod: CategoryLimitResetPeriod;
+  @JoinColumn({ name: 'group_id' })
+  group: CategoryGroup;
+
+  @ManyToOne(() => Budget, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({
+    name: 'budget_id',
+    foreignKeyConstraintName: 'fk_categories_to_budget',
+  })
+  budget: Budget;
 
   @OneToOne(() => Goal, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({
@@ -48,14 +52,10 @@ export class Category extends Timestamps {
   )
   categorySpending: CategorySpending;
 
-  constructor(
-    type: string,
-    limitAmount?: number,
-    limitResetPeriod?: CategoryLimitResetPeriod,
-  ) {
+  constructor(name: string, group: string, budget: Budget, goal?: Goal) {
     super();
-    this.type = type;
-    this.limitAmount = limitAmount || null;
-    this.limitResetPeriod = limitResetPeriod || CategoryLimitResetPeriod.NONE;
+    this.name = name;
+    this.budget = budget;
+    this.goal = goal;
   }
 }
