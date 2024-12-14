@@ -11,6 +11,7 @@ import { CronJobsModule } from './modules/cron-jobs.module';
 import { AccountsModule } from './modules/accounts.module';
 import { CategoriesModule } from './modules/categories.module';
 import { CategoryGroupsModule } from './modules/category-groups.module';
+import { GoalsModule } from './modules/goals.module';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { CategoryGroupsModule } from './modules/category-groups.module';
     AccountsModule,
     CategoriesModule,
     CategoryGroupsModule,
+    GoalsModule,
   ],
   providers: [
     Logger,
