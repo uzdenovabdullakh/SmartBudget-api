@@ -8,7 +8,7 @@ import {
 } from 'typeorm';
 import { Timestamps } from './timestamps.entity';
 import { Category } from './category.entity';
-import { CategoryLimitResetPeriod } from 'src/constants/enums';
+import { Period } from 'src/constants/enums';
 
 @Entity({ name: 'category_spending' })
 @Unique('uk_category_period', ['category', 'periodStart', 'periodEnd'])
@@ -29,13 +29,13 @@ export class CategorySpending extends Timestamps {
   limitAmount: number;
 
   @Column({
-    default: CategoryLimitResetPeriod.NONE,
-    enum: CategoryLimitResetPeriod,
+    default: Period.NONE,
+    enum: Period,
     type: 'enum',
-    enumName: 'enum_category_limit_reset_period',
+    enumName: 'enum_period',
     name: 'limit_reset_period',
   })
-  limitResetPeriod: CategoryLimitResetPeriod;
+  limitResetPeriod: Period;
 
   @OneToOne(() => Category, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
@@ -50,7 +50,7 @@ export class CategorySpending extends Timestamps {
     periodEnd: Date,
     spentAmount?: number,
     limitAmount?: number,
-    limitResetPeriod?: CategoryLimitResetPeriod,
+    limitResetPeriod?: Period,
   ) {
     super();
     this.category = category;

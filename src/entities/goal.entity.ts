@@ -8,7 +8,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Timestamps } from './timestamps.entity';
-import { GoalsPeriod } from 'src/constants/enums';
+import { Period } from 'src/constants/enums';
 import { Budget } from './budget.entity';
 import { Reminder } from './reminder.entity';
 import { Category } from './category.entity';
@@ -49,11 +49,11 @@ export class Goal extends Timestamps {
 
   @Column({
     type: 'enum',
-    enum: GoalsPeriod,
-    enumName: 'enum_goals_period',
+    enum: Period,
+    enumName: 'enum_period',
     nullable: false,
   })
-  period: GoalsPeriod;
+  period: Period;
 
   @ManyToOne(() => Budget, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
@@ -72,7 +72,7 @@ export class Goal extends Timestamps {
     targetAmount: number,
     achieveDate: Date,
     budget: Budget,
-    period: GoalsPeriod,
+    period: Period,
     name?: string,
     currentAmount?: number,
   ) {
