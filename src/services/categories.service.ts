@@ -2,10 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Budget } from 'src/entities/budget.entity';
 import { CategoryGroup } from 'src/entities/category-group.entity';
+import { CategorySpending } from 'src/entities/category-spending.entity';
 import { Category } from 'src/entities/category.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
+import { calculatePeriod } from 'src/utils/helpers';
 import {
+  CategoryLimitDto,
   CreateCategoryDto,
   UpdateCategoryDto,
 } from 'src/validation/category.schema';
@@ -20,6 +23,8 @@ export class CategoriesService {
     private readonly categoryGroupRepository: Repository<CategoryGroup>,
     @InjectRepository(Budget)
     private readonly budgetRepository: Repository<Budget>,
+    @InjectRepository(CategorySpending)
+    private readonly categorySpendingRepository: Repository<CategorySpending>,
   ) {}
 
   async createCategory(dto: CreateCategoryDto, user: User) {
@@ -179,5 +184,24 @@ export class CategoriesService {
     }
 
     await this.categoryRepository.restore(ids);
+  }
+
+  async setCategoryLimit(id: string, dto: CategoryLimitDto, user: User) {
+    const category = await this.getCategory(id, user);
+
+    const { limitAmount, limitResetPeriod } = dto;
+
+    const [periodStart, periodEnd] = calculatePeriod(limitResetPeriod);
+
+    const categorySpending = this.categorySpendingRepository.create({
+      category,
+      limitAmount,
+      limitResetPeriod,
+      periodStart,
+      periodEnd,
+    });
+
+    await this.categorySpendingRepository.save(categorySpending);
+    return await this.getCategory(id, user);
   }
 }

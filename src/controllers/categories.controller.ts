@@ -15,6 +15,8 @@ import { CategoriesService } from 'src/services/categories.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
 import {
+  CategoryLimitDto,
+  CategoryLimitSchema,
   CreateCategoryDto,
   CreateCategorySchema,
   UpdateCategoryDto,
@@ -91,6 +93,23 @@ export class CategoriesController {
     await this.categoriesService.restoreCategories(dto, req.user);
     return {
       message: 'Categories was successfully restored',
+    };
+  }
+
+  @Post('category-limit/:id')
+  async setCategoryLimit(
+    @Req() req: AuthenticationRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(CategoryLimitSchema)) dto: CategoryLimitDto,
+  ) {
+    const data = await this.categoriesService.setCategoryLimit(
+      id,
+      dto,
+      req.user,
+    );
+    return {
+      data,
+      message: 'Category limit successfully added',
     };
   }
 }
