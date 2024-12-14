@@ -66,7 +66,7 @@ export class Goal extends Timestamps {
   reminder: Reminder[];
 
   @OneToOne(() => Category, (category) => category.goal)
-  account: Category;
+  category: Category;
 
   constructor(
     targetAmount: number,
