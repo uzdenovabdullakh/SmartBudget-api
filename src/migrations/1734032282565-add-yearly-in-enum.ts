@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class GeneratedMigration1734032282565 implements MigrationInterface {
-  name = 'GeneratedMigration1734032282565';
+export class AddYearlyInEnum1734032282565 implements MigrationInterface {
+  name = 'AddYearlyInEnum1734032282565';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { CategoryLimitResetPeriod } from 'src/constants/enums';
+import { Period } from 'src/constants/enums';
 
 export const CategorySchema = z
   .object({
@@ -12,7 +12,7 @@ export const CategorySchema = z
 export const CategoryLimitSchema = z
   .object({
     limitAmount: z.number().positive().min(1),
-    limitResetPeriod: z.nativeEnum(CategoryLimitResetPeriod),
+    limitResetPeriod: z.nativeEnum(Period),
   })
   .required();
 

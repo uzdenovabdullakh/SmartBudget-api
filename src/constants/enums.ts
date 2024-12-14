@@ -9,12 +9,6 @@ export enum TransactionType {
   EXPENSE = 'expense',
 }
 
-export enum GoalsPeriod {
-  WEEKLY = 'weekly',
-  MONTHLY = 'monthly',
-  YEARLY = 'yearly',
-}
-
 export enum UnlinkedAccountType {
   CASH = 'cash',
   CARD = 'card',
@@ -27,7 +21,7 @@ export enum AnalyticsPredictionType {
   CATEGORY_DISTRIBUTION = 'category_distribution',
 }
 
-export enum CategoryLimitResetPeriod {
+export enum Period {
   DAILY = 'daily',
   WEEKLY = 'weekly',
   MONTHLY = 'monthly',

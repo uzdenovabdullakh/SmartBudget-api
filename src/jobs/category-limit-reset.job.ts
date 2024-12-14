@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
-import { CategoryLimitResetPeriod } from 'src/constants/enums';
+import { Period } from 'src/constants/enums';
 import { CategorySpending } from 'src/entities/category-spending.entity';
 import { calculatePeriod } from 'src/utils/helpers';
 import { Repository, LessThanOrEqual } from 'typeorm';
@@ -30,7 +30,7 @@ export class ResetSpendingService {
       }
 
       for (const spending of categorySpendings) {
-        if (spending.limitResetPeriod !== CategoryLimitResetPeriod.NONE) {
+        if (spending.limitResetPeriod !== Period.NONE) {
           spending.spentAmount = 0;
           const [newPeriodStart, newPeriodEnd] = calculatePeriod(
             spending.limitResetPeriod,

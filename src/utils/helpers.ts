@@ -1,4 +1,4 @@
-import { CategoryLimitResetPeriod } from 'src/constants/enums';
+import { Period } from 'src/constants/enums';
 import { ApiException } from 'src/exceptions/api.exception';
 
 export const parseDuration = (duration: string): number => {
@@ -16,30 +16,28 @@ export const parseDuration = (duration: string): number => {
   return parseInt(value, 10) * multiplier;
 };
 
-export const calculatePeriod = (
-  limitResetPeriod: CategoryLimitResetPeriod,
-): [Date, Date] => {
+export const calculatePeriod = (limitResetPeriod: Period): [Date, Date] => {
   const now = new Date();
   let periodStart: Date;
   let periodEnd: Date;
 
-  const periodCalculationMap: Record<CategoryLimitResetPeriod, () => void> = {
-    [CategoryLimitResetPeriod.NONE]: () => {
+  const periodCalculationMap: Record<Period, () => void> = {
+    [Period.NONE]: () => {
       periodStart = null;
       periodEnd = null;
     },
-    [CategoryLimitResetPeriod.DAILY]: () => {
+    [Period.DAILY]: () => {
       periodStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
       periodEnd = new Date(periodStart);
       periodEnd.setDate(periodEnd.getDate() + 1);
     },
-    [CategoryLimitResetPeriod.WEEKLY]: () => {
+    [Period.WEEKLY]: () => {
       periodStart = new Date(now);
       periodStart.setDate(periodStart.getDate() - periodStart.getDay());
       periodEnd = new Date(periodStart);
       periodEnd.setDate(periodEnd.getDate() + 7);
     },
-    [CategoryLimitResetPeriod.MONTHLY]: () => {
+    [Period.MONTHLY]: () => {
       periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
       periodEnd = new Date(
         periodStart.getFullYear(),
@@ -47,7 +45,7 @@ export const calculatePeriod = (
         1,
       );
     },
-    [CategoryLimitResetPeriod.YEARLY]: () => {
+    [Period.YEARLY]: () => {
       periodStart = new Date(now.getFullYear(), 0, 1);
       periodEnd = new Date(periodStart.getFullYear() + 1, 0, 1);
     },

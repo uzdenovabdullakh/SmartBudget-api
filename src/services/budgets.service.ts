@@ -54,6 +54,7 @@ export class BudgetsService {
           id: user.id,
         },
       },
+      relations: ['goals', 'accounts'],
     });
     if (!budget) {
       throw ApiException.notFound('Budget not found');
