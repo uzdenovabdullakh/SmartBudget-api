@@ -23,6 +23,7 @@ export class BriefService {
     const brief = this.briefRepository.create({
       user,
       briefAnswers: dto,
+      isCompleted: true,
     });
     await this.briefRepository.save(brief);
 

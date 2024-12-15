@@ -16,8 +16,17 @@ export class Brief {
     type: 'jsonb',
     nullable: false,
     default: () => `'{}'`,
+    name: 'brief_answers',
   })
   briefAnswers: Record<string, string | string[]>;
+
+  @Column({
+    type: 'bool',
+    name: 'is_completed',
+    nullable: false,
+    default: false,
+  })
+  isCompleted: boolean;
 
   @OneToOne(() => User, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
