@@ -22,7 +22,8 @@
     "migration:run": "npm run build && npm run typeorm migration:run -- -d ./src/data-source.ts",
     "migration:reset": "npm run build && npm run typeorm -- -d ./src/data-source.ts migration:revert",
     "test": "vitest run --coverage",
-    "docker:up": "docker compose up -d --build"
+    "docker:up": "docker compose up -d --build",
+    "tsc": "tsc"
   },
   "dependencies": {
     "@nestjs-modules/mailer": "^1.6.1",
