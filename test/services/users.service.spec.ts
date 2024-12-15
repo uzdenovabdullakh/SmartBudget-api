@@ -34,11 +34,15 @@ describe('UsersService', () => {
     expect(service).toBeDefined();
   });
 
-  it('should call findOne method in repository', async () => {
+  it('should call findOne method in repository and return user with isBriefCompleted', async () => {
     const userId = '123';
     mockUserRepository.findOne.mockResolvedValue({
       id: userId,
+      login: 'test_user',
       email: 'test@example.com',
+      settings: { theme: 'dark' },
+      isActivated: true,
+      brief: { isCompleted: true },
     });
 
     const result = await service.findOne(userId);
@@ -46,7 +50,16 @@ describe('UsersService', () => {
     expect(mockUserRepository.findOne).toHaveBeenCalledWith({
       where: { id: userId },
       select: ['id', 'login', 'email', 'settings', 'isActivated'],
+      relations: ['brief'],
     });
-    expect(result).toEqual({ id: userId, email: 'test@example.com' });
+
+    expect(result).toEqual({
+      id: userId,
+      login: 'test_user',
+      email: 'test@example.com',
+      settings: { theme: 'dark' },
+      isActivated: true,
+      isBriefCompleted: true,
+    });
   });
 });
