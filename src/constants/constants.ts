@@ -4,7 +4,7 @@ export const tokenLifeTime = {
   refresh_token: '1d',
 };
 
-export const BriefQuestions = {
+export const BriefQuestions: Record<string, string | string[]> = {
   'Tell us about your home': '',
   'Do you currently have any debt?': [],
   'How do you get around?': [],

@@ -11,6 +11,7 @@ const connection = new DataSource({
   url: configService.get<string>('DATABASE_URL'),
   migrationsRun: false,
   migrationsTransactionMode: 'all',
+  subscribers: [`${__dirname}/subscribers/**/*{.ts,.js}`],
   entities: [`${__dirname}/entities/**/*{.ts,.js}`],
   migrations: [`${__dirname}/migrations/**/*{.ts,.js}`],
   synchronize: false,
