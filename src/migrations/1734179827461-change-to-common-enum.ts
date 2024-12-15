@@ -24,9 +24,6 @@ export class ChangeToCommonEnum1734179827461 implements MigrationInterface {
       `ALTER TYPE "public"."enum_category_limit_reset_period" RENAME TO "enum_category_limit_reset_period_old"`,
     );
     await queryRunner.query(
-      `CREATE TYPE "public"."enum_period" AS ENUM('daily', 'weekly', 'monthly', 'yearly', 'none')`,
-    );
-    await queryRunner.query(
       `ALTER TABLE "category_spending" ALTER COLUMN "limit_reset_period" DROP DEFAULT`,
     );
     await queryRunner.query(
