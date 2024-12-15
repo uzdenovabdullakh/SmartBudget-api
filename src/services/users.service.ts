@@ -33,15 +33,21 @@ export class UsersService {
 
   async findOne(id: string): Promise<UserInfo> {
     const user = await this.userRepository.findOne({
-      where: {
-        id,
-      },
+      where: { id },
       select: ['id', 'login', 'email', 'settings', 'isActivated'],
+      relations: ['brief'],
     });
+
     if (!user) throw ApiException.notFound('User not found!');
 
-    delete user.password;
-    return user;
+    return {
+      id: user.id,
+      login: user.login,
+      email: user.email,
+      settings: user.settings,
+      isActivated: user.isActivated,
+      isBriefCompleted: user.brief.isCompleted,
+    };
   }
 
   async findOneByEmail(email: string): Promise<User> {
@@ -49,6 +55,7 @@ export class UsersService {
       where: {
         email,
       },
+      relations: ['budgets'],
     });
     if (!user) throw ApiException.notFound('User not found!');
 
