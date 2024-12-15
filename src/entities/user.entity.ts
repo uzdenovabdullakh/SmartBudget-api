@@ -1,7 +1,14 @@
-import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  OneToMany,
+  OneToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { Timestamps } from './timestamps.entity';
 import { Token } from './token.entity';
 import { Budget } from './budget.entity';
+import { Brief } from './brief.entity';
 
 @Entity({ name: 'users' })
 export class User extends Timestamps {
@@ -37,6 +44,9 @@ export class User extends Timestamps {
 
   @OneToMany(() => Budget, (budget) => budget.user)
   budgets: Budget[];
+
+  @OneToOne(() => Brief, (brief) => brief.user)
+  brief: Brief;
 
   constructor(
     email: string,

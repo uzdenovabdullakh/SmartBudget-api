@@ -12,6 +12,7 @@ import { AccountsModule } from './modules/accounts.module';
 import { CategoriesModule } from './modules/categories.module';
 import { CategoryGroupsModule } from './modules/category-groups.module';
 import { GoalsModule } from './modules/goals.module';
+import { BriefModule } from './modules/brief.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { GoalsModule } from './modules/goals.module';
     CategoriesModule,
     CategoryGroupsModule,
     GoalsModule,
+    BriefModule,
   ],
   providers: [
     Logger,

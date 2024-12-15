@@ -49,6 +49,7 @@ export class UsersService {
       where: {
         email,
       },
+      relations: ['budgets'],
     });
     if (!user) throw ApiException.notFound('User not found!');
 
