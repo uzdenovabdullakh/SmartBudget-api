@@ -22,6 +22,11 @@ export class UsersService {
       withDeleted: true,
     });
     if (findUser) {
+      if (!findUser.isActivated) {
+        throw ApiException.badRequest(
+          'User is not activated. Resend activation email!',
+        );
+      }
       throw ApiException.badRequest('User already exist!');
     }
 

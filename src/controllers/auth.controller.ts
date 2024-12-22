@@ -34,6 +34,10 @@ import {
   ResetPasswordSchema,
 } from 'src/validation/reset-password.schema';
 import { TokenDto, TokenSchema } from 'src/validation/token.schema';
+import {
+  ResendEmailSchema,
+  ResendEmailDto,
+} from 'src/validation/resend-email.schema';
 
 @Controller('auth')
 export class AuthController {
@@ -151,5 +155,32 @@ export class AuthController {
   async logout(@Req() req: AuthenticationRequest, @Body() dto: TokenDto) {
     const user = req.user;
     await this.authService.logout(user, dto.refreshToken);
+  }
+
+  @Public()
+  @Post('resend-email')
+  @UsePipes(new ZodValidationPipe(ResendEmailSchema))
+  async resendEmail(@Body() dto: ResendEmailDto) {
+    const { email, type } = dto;
+
+    const user = await this.userService.findOneByEmail(email);
+
+    const token = await this.authService.createToken(user, type as TokensType);
+
+    if (type === TokensType.ACTIVATE_ACCOUNT) {
+      await this.mailService.sendInvite({
+        email,
+        token,
+        userName: user.login,
+      });
+    } else {
+      await this.mailService.resetPassword({
+        email,
+        token,
+        userName: user.login,
+      });
+    }
+
+    return { message: 'New email successfully sent' };
   }
 }

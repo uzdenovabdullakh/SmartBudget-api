@@ -38,6 +38,12 @@ export class AuthService {
       );
     }
 
+    if (user && !user.isActivated) {
+      throw ApiException.badRequest(
+        'User is not activated. Resend activation email!',
+      );
+    }
+
     const isPasswordValid = await this.bcryptService.comparePasswords(
       password,
       user.password,
