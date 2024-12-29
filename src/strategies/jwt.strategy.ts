@@ -22,7 +22,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
   async validate(payload: { email: string }): Promise<User> {
     const user = await this.userService.findOneByEmail(payload.email);
     if (!user) {
-      throw ApiException.unauthorized('User not found');
+      throw ApiException.badRequest('User not found');
     }
     return user;
   }
