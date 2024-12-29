@@ -81,7 +81,7 @@ export class AuthController {
       userName: login,
     });
 
-    return { message: 'Verification email sent' };
+    return { email, login };
   }
 
   @Public()
@@ -93,6 +93,7 @@ export class AuthController {
       token,
       TokensType.ACTIVATE_ACCOUNT,
     );
+
     if (!user) {
       throw ApiException.badRequest('Invalid or expired token');
     }
@@ -107,6 +108,15 @@ export class AuthController {
   @UsePipes(new ZodValidationPipe(ResetPasswordRequestSchema))
   async resetPasswordRequest(@Body() dto: ResetPasswordRequestDto) {
     const user = await this.userService.findOneByEmail(dto.email);
+
+    if (
+      user.tokens.length &&
+      user.tokens.find((item) => item.tokenType === TokensType.RESET_PASSWORD)
+    ) {
+      throw ApiException.badRequest(
+        'Reset password email already send. Check your mail box, or resend email',
+      );
+    }
 
     const token = await this.authService.createToken(
       user,
@@ -164,6 +174,16 @@ export class AuthController {
     const { email, type } = dto;
 
     const user = await this.userService.findOneByEmail(email);
+
+    if (
+      user.tokens.length &&
+      user.tokens.filter((item) => item.tokenType === (type as TokensType))
+        .length > 3
+    ) {
+      throw ApiException.badRequest(
+        'Reset password email already send. Check your email box',
+      );
+    }
 
     const token = await this.authService.createToken(user, type as TokensType);
 

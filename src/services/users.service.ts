@@ -60,7 +60,7 @@ export class UsersService {
       where: {
         email,
       },
-      relations: ['budgets'],
+      relations: ['budgets', 'tokens'],
     });
     if (!user) throw ApiException.notFound('User not found!');
 

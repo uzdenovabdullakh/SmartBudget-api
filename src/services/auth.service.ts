@@ -38,12 +38,6 @@ export class AuthService {
       );
     }
 
-    if (user && !user.isActivated) {
-      throw ApiException.badRequest(
-        'User is not activated. Resend activation email!',
-      );
-    }
-
     const isPasswordValid = await this.bcryptService.comparePasswords(
       password,
       user.password,
@@ -57,13 +51,13 @@ export class AuthService {
 
   async generateTokensToResponse(user: User) {
     const { id, email, login, isActivated } = user;
-    const acessToken = await this.jwtService.generateToken(
+    const accessToken = await this.jwtService.generateToken(
       { id, email, login, isActivated },
       '15m',
     );
     const refreshToken = await this.createToken(user, TokensType.REFRESH_TOKEN);
 
-    return { acessToken, refreshToken };
+    return { accessToken, refreshToken };
   }
 
   async createToken(user: User, tokenType: TokensType): Promise<string> {
