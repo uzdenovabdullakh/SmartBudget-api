@@ -32,7 +32,7 @@ export class MailService {
 
   async resetPassword(mailData: MailOptions) {
     const { email, token, userName } = mailData;
-    const url = `${this.configService.get<string>('CLIENT_URL')}/reset/${token}`;
+    const url = `${this.configService.get<string>('CLIENT_URL')}/auth/password/confirm/${token}`;
     await this.sendMail(
       {
         to: email,
@@ -46,7 +46,7 @@ export class MailService {
 
   async sendInvite(mailData: MailOptions) {
     const { email, token, userName } = mailData;
-    const url = `${this.configService.get<string>('CLIENT_URL')}/signup/${token}`;
+    const url = `${this.configService.get<string>('CLIENT_URL')}/auth/signup/confirm/${token}`;
     await this.sendMail(
       {
         to: email,
