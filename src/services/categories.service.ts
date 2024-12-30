@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ErrorMessages } from 'src/constants/constants';
 import { Budget } from 'src/entities/budget.entity';
 import { CategoryGroup } from 'src/entities/category-group.entity';
 import { CategorySpending } from 'src/entities/category-spending.entity';
@@ -35,7 +36,7 @@ export class CategoriesService {
     });
 
     if (!categoryGroup) {
-      throw ApiException.notFound(`Category group does not exist`);
+      throw ApiException.notFound(ErrorMessages.CATEGORY_GROUP_NOT_FOUND);
     }
 
     const budget = await this.budgetRepository.findOne({
@@ -47,9 +48,7 @@ export class CategoriesService {
     });
 
     if (!budget) {
-      throw ApiException.notFound(
-        `Budget does not exist or does not belong to the current user.`,
-      );
+      throw ApiException.notFound(ErrorMessages.BUDGET_NOT_FOUND);
     }
 
     const existingCategory = await this.categoryRepository.findOne({
@@ -62,9 +61,7 @@ export class CategoriesService {
     });
 
     if (existingCategory) {
-      throw ApiException.conflictError(
-        `Category already exists in the group for the specified budget.`,
-      );
+      throw ApiException.conflictError(ErrorMessages.CATEGORY_ALREADY_EXISTS);
     }
 
     const category = this.categoryRepository.create({
@@ -96,7 +93,7 @@ export class CategoriesService {
       relations: ['categorySpending', 'goal', 'group'],
     });
     if (!category) {
-      throw ApiException.notFound('Category does not exist');
+      throw ApiException.notFound(ErrorMessages.CATEGORY_NOT_FOUND);
     }
 
     return category;
@@ -120,9 +117,7 @@ export class CategoriesService {
       withDeleted: true,
     });
     if (budgetExist) {
-      throw ApiException.conflictError(
-        'Category with this name already exist in this budget',
-      );
+      throw ApiException.conflictError(ErrorMessages.CATEGORY_ALREADY_EXISTS);
     }
 
     await this.categoryRepository.update(
@@ -156,9 +151,7 @@ export class CategoriesService {
     const foundIds = categories.map((category) => category.id);
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
-      throw ApiException.notFound(
-        `Categories not found for IDs: ${notFoundIds.join(', ')}`,
-      );
+      throw ApiException.notFound(ErrorMessages.CATEGORY_NOT_FOUND);
     }
 
     await this.categoryRepository.delete(ids);
@@ -178,9 +171,7 @@ export class CategoriesService {
     const foundIds = categories.map((category) => category.id);
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
-      throw ApiException.notFound(
-        `Categories not found for IDs: ${notFoundIds.join(', ')}`,
-      );
+      throw ApiException.notFound(ErrorMessages.CATEGORY_NOT_FOUND);
     }
 
     await this.categoryRepository.restore(ids);

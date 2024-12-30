@@ -46,6 +46,7 @@ import {
   RestoreAccountDto,
   RestoreAccountSchema,
 } from 'src/validation/restore-account.schema';
+import { ErrorMessages } from 'src/constants/constants';
 
 @Controller('auth')
 export class AuthController {
@@ -103,7 +104,7 @@ export class AuthController {
     );
 
     if (!user) {
-      throw ApiException.badRequest('Invalid or expired token');
+      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
     }
 
     await this.authService.activateUser(user, password);
@@ -141,7 +142,7 @@ export class AuthController {
       TokensType.RESET_PASSWORD,
     );
     if (!user) {
-      throw ApiException.badRequest('Invalid or expired token');
+      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
     }
 
     await this.authService.updatePassword(user, newPassword);
@@ -216,7 +217,7 @@ export class AuthController {
       TokensType.RESTORE_ACCOUNT,
     );
     if (!user) {
-      throw ApiException.badRequest('Invalid or expired token');
+      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
     }
 
     await this.userService.restore(user.email);

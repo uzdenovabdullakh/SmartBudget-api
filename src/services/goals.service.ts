@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ErrorMessages } from 'src/constants/constants';
 import { Budget } from 'src/entities/budget.entity';
 import { Category } from 'src/entities/category.entity';
 import { Goal } from 'src/entities/goal.entity';
@@ -34,9 +35,7 @@ export class GoalsService {
       });
 
       if (!budget) {
-        throw ApiException.notFound(
-          'Budget does not exist or does not belong to the current user.',
-        );
+        throw ApiException.notFound(ErrorMessages.BUDGET_NOT_FOUND);
       }
 
       goal.budget = budget;
@@ -56,9 +55,7 @@ export class GoalsService {
       });
 
       if (!category) {
-        throw ApiException.notFound(
-          'Category does not exist or does not belong to the current user.',
-        );
+        throw ApiException.notFound(ErrorMessages.CATEGORY_NOT_FOUND);
       }
 
       category.goal = goal;
@@ -81,7 +78,7 @@ export class GoalsService {
       },
     });
     if (!goal) {
-      throw ApiException.notFound('Goal does not exist');
+      throw ApiException.notFound(ErrorMessages.GOAL_NOT_FOUND);
     }
 
     return goal;

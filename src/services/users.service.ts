@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ErrorMessages } from 'src/constants/constants';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { UserInfo } from 'src/types/user.types';
@@ -19,11 +20,9 @@ export class UsersService {
     });
     if (findUser) {
       if (!findUser.isActivated) {
-        throw ApiException.badRequest(
-          'User is not activated. Resend activation email!',
-        );
+        throw ApiException.badRequest(ErrorMessages.USER_IS_NOT_ACTIVATED);
       }
-      throw ApiException.badRequest('User already exist!');
+      throw ApiException.badRequest(ErrorMessages.USER_ALREADY_EXISTS);
     }
 
     const user = this.userRepository.create(dto);
@@ -39,7 +38,7 @@ export class UsersService {
       relations: ['brief'],
     });
 
-    if (!user) throw ApiException.notFound('User not found!');
+    if (!user) throw ApiException.notFound(ErrorMessages.USER_NOT_FOUND);
 
     return {
       id: user.id,
@@ -58,7 +57,7 @@ export class UsersService {
       },
       relations: ['budgets', 'tokens'],
     });
-    if (!user) throw ApiException.notFound('User not found!');
+    if (!user) throw ApiException.notFound(ErrorMessages.USER_NOT_FOUND);
 
     return user;
   }
@@ -75,7 +74,7 @@ export class UsersService {
         withDeleted: true,
       });
       if (existEmail)
-        throw ApiException.badRequest('User with this email already exist!');
+        throw ApiException.badRequest(ErrorMessages.USER_ALREADY_EXISTS);
     }
 
     await this.userRepository.update({ id }, dto);

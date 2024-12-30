@@ -5,6 +5,7 @@ import { AuthService } from 'src/services/auth.service';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { LoginSchema } from 'src/validation/login.schema';
+import { ErrorMessages } from 'src/constants/constants';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
@@ -23,7 +24,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
 
     const user = await this.authService.validateUser(email, password);
     if (!user) {
-      throw ApiException.badRequest('Invalid credentials');
+      throw ApiException.badRequest(ErrorMessages.INVALID_CREADENTIALS);
     }
     return user;
   }
