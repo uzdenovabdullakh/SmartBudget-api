@@ -38,6 +38,14 @@ import {
   ResendEmailSchema,
   ResendEmailDto,
 } from 'src/validation/resend-email.schema';
+import {
+  RestoreAccountRequestDto,
+  RestoreAccountRequestSchema,
+} from 'src/validation/resrore-account-request.schema copy';
+import {
+  RestoreAccountDto,
+  RestoreAccountSchema,
+} from 'src/validation/restore-account.schema';
 
 @Controller('auth')
 export class AuthController {
@@ -175,5 +183,44 @@ export class AuthController {
     });
 
     return { message: 'New email successfully sent' };
+  }
+
+  @Public()
+  @Post('restore-request')
+  @UsePipes(new ZodValidationPipe(RestoreAccountRequestSchema))
+  async restoreAccountRequest(@Body() dto: RestoreAccountRequestDto) {
+    const user = await this.userService.findOneByEmail(dto.email);
+
+    const token = await this.authService.validateAndCreateToken(
+      user,
+      TokensType.RESTORE_ACCOUNT,
+    );
+
+    await this.mailService.sendMailByType(TokensType.RESTORE_ACCOUNT, {
+      email: user.email,
+      token,
+      userName: user.login,
+    });
+
+    return { message: 'Restore account email sent' };
+  }
+
+  @Public()
+  @Post('restore-account')
+  @UsePipes(new ZodValidationPipe(RestoreAccountSchema))
+  async restoreAccount(@Body() dto: RestoreAccountDto) {
+    const { token } = dto;
+
+    const user = await this.authService.verifyToken(
+      token,
+      TokensType.RESTORE_ACCOUNT,
+    );
+    if (!user) {
+      throw ApiException.badRequest('Invalid or expired token');
+    }
+
+    await this.userService.restore(user.email);
+
+    return { message: 'Account successfully restored' };
   }
 }
