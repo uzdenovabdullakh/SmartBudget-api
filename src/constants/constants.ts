@@ -130,3 +130,9 @@ export const ErrorMessages = {
   USER_IS_DELETED: 'User is deleted. Please restore your account',
   INVALID_REFRESH_TOKEN: 'Invalid or expired refresh token',
 };
+
+export const ErrorCodes = {
+  USER_DELETED: 'USER_DELETED',
+  USER_NOT_ACTIVATED: 'USER_NOT_ACTIVATED',
+  TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
+};

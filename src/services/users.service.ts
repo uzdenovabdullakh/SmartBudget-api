@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ErrorMessages } from 'src/constants/constants';
+import { ErrorCodes, ErrorMessages } from 'src/constants/constants';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { UserInfo } from 'src/types/user.types';
@@ -20,7 +20,10 @@ export class UsersService {
     });
     if (findUser) {
       if (!findUser.isActivated) {
-        throw ApiException.badRequest(ErrorMessages.USER_IS_NOT_ACTIVATED);
+        throw ApiException.badRequest(
+          ErrorMessages.USER_IS_NOT_ACTIVATED,
+          ErrorCodes.USER_NOT_ACTIVATED,
+        );
       }
       throw ApiException.badRequest(ErrorMessages.USER_ALREADY_EXISTS);
     }

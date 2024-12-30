@@ -7,7 +7,11 @@ import { JwtTokenService } from './jwt.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BcryptService } from './bcrypt.service';
 import { ApiException } from 'src/exceptions/api.exception';
-import { ErrorMessages, tokenLifeTime } from 'src/constants/constants';
+import {
+  ErrorCodes,
+  ErrorMessages,
+  tokenLifeTime,
+} from 'src/constants/constants';
 import { ChangePasswordDto } from 'src/validation/change-password.schema';
 import { parseDuration } from 'src/utils/helpers';
 
@@ -32,16 +36,19 @@ export class AuthService {
 
     if (!user || !user.password) return null;
 
-    if (user.deletedAt) {
-      throw ApiException.conflictError(ErrorMessages.USER_IS_DELETED);
-    }
-
     const isPasswordValid = await this.bcryptService.comparePasswords(
       password,
       user.password,
     );
     if (!isPasswordValid) {
       return null;
+    }
+
+    if (user.deletedAt) {
+      throw ApiException.conflictError(
+        ErrorMessages.USER_IS_DELETED,
+        ErrorCodes.USER_DELETED,
+      );
     }
 
     return user;
@@ -93,7 +100,10 @@ export class AuthService {
     ).length;
 
     if (tokenCount > 3) {
-      throw ApiException.badRequest(ErrorMessages.TOO_MANY_REQUESTS);
+      throw ApiException.badRequest(
+        ErrorMessages.TOO_MANY_REQUESTS,
+        ErrorCodes.TOO_MANY_REQUESTS,
+      );
     }
 
     return await this.createToken(user, type);
