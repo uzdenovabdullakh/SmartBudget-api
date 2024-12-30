@@ -89,6 +89,20 @@ export class AuthService {
     return token;
   }
 
+  async validateAndCreateToken(user: User, type: TokensType): Promise<string> {
+    const tokenCount = user.tokens.filter(
+      (item) => item.tokenType === type,
+    ).length;
+
+    if (tokenCount > 3) {
+      throw ApiException.badRequest(
+        'Too many requests for this action. Please check your email.',
+      );
+    }
+
+    return await this.createToken(user, type);
+  }
+
   async refreshTokens(refreshToken: string) {
     const tokenEntity = await this.tokenRepository.findOne({
       where: { token: refreshToken, tokenType: TokensType.REFRESH_TOKEN },

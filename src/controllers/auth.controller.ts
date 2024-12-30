@@ -75,10 +75,10 @@ export class AuthController {
       TokensType.ACTIVATE_ACCOUNT,
     );
 
-    await this.mailService.sendInvite({
+    await this.mailService.sendMailByType(TokensType.ACTIVATE_ACCOUNT, {
       email,
       token,
-      userName: login,
+      userName: user.login,
     });
 
     return { email, login };
@@ -109,22 +109,13 @@ export class AuthController {
   async resetPasswordRequest(@Body() dto: ResetPasswordRequestDto) {
     const user = await this.userService.findOneByEmail(dto.email);
 
-    if (
-      user.tokens.length &&
-      user.tokens.find((item) => item.tokenType === TokensType.RESET_PASSWORD)
-    ) {
-      throw ApiException.badRequest(
-        'Reset password email already send. Check your mail box, or resend email',
-      );
-    }
-
-    const token = await this.authService.createToken(
+    const token = await this.authService.validateAndCreateToken(
       user,
       TokensType.RESET_PASSWORD,
     );
 
-    await this.mailService.resetPassword({
-      email: dto.email,
+    await this.mailService.sendMailByType(TokensType.RESET_PASSWORD, {
+      email: user.email,
       token,
       userName: user.login,
     });
@@ -175,31 +166,13 @@ export class AuthController {
 
     const user = await this.userService.findOneByEmail(email);
 
-    if (
-      user.tokens.length &&
-      user.tokens.filter((item) => item.tokenType === (type as TokensType))
-        .length > 3
-    ) {
-      throw ApiException.badRequest(
-        'Reset password email already send. Check your email box',
-      );
-    }
+    const token = await this.authService.validateAndCreateToken(user, type);
 
-    const token = await this.authService.createToken(user, type as TokensType);
-
-    if (type === TokensType.ACTIVATE_ACCOUNT) {
-      await this.mailService.sendInvite({
-        email,
-        token,
-        userName: user.login,
-      });
-    } else {
-      await this.mailService.resetPassword({
-        email,
-        token,
-        userName: user.login,
-      });
-    }
+    await this.mailService.sendMailByType(type, {
+      email,
+      token,
+      userName: user.login,
+    });
 
     return { message: 'New email successfully sent' };
   }
