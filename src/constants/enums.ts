@@ -2,6 +2,7 @@ export enum TokensType {
   RESET_PASSWORD = 'reset_password',
   ACTIVATE_ACCOUNT = 'activate_account',
   REFRESH_TOKEN = 'refresh_token',
+  RESTORE_ACCOUNT = 'restore_account',
 }
 
 export enum TransactionType {
