@@ -7,7 +7,11 @@ import { JwtTokenService } from './jwt.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BcryptService } from './bcrypt.service';
 import { ApiException } from 'src/exceptions/api.exception';
-import { tokenLifeTime } from 'src/constants/constants';
+import {
+  ErrorCodes,
+  ErrorMessages,
+  tokenLifeTime,
+} from 'src/constants/constants';
 import { ChangePasswordDto } from 'src/validation/change-password.schema';
 import { parseDuration } from 'src/utils/helpers';
 
@@ -32,18 +36,19 @@ export class AuthService {
 
     if (!user || !user.password) return null;
 
-    if (user.deletedAt) {
-      throw ApiException.conflictError(
-        'User is deleted. Please restore your account.',
-      );
-    }
-
     const isPasswordValid = await this.bcryptService.comparePasswords(
       password,
       user.password,
     );
     if (!isPasswordValid) {
       return null;
+    }
+
+    if (user.deletedAt) {
+      throw ApiException.conflictError(
+        ErrorMessages.USER_IS_DELETED,
+        ErrorCodes.USER_DELETED,
+      );
     }
 
     return user;
@@ -89,6 +94,21 @@ export class AuthService {
     return token;
   }
 
+  async validateAndCreateToken(user: User, type: TokensType): Promise<string> {
+    const tokenCount = user.tokens.filter(
+      (item) => item.tokenType === type,
+    ).length;
+
+    if (tokenCount > 3) {
+      throw ApiException.badRequest(
+        ErrorMessages.TOO_MANY_REQUESTS,
+        ErrorCodes.TOO_MANY_REQUESTS,
+      );
+    }
+
+    return await this.createToken(user, type);
+  }
+
   async refreshTokens(refreshToken: string) {
     const tokenEntity = await this.tokenRepository.findOne({
       where: { token: refreshToken, tokenType: TokensType.REFRESH_TOKEN },
@@ -96,13 +116,13 @@ export class AuthService {
     });
 
     if (!tokenEntity) {
-      throw ApiException.unauthorized('Invalid refresh token');
+      throw ApiException.unauthorized(ErrorMessages.INVALID_REFRESH_TOKEN);
     }
 
     const isValid = await this.jwtService.validateToken(refreshToken);
     if (!isValid) {
       await this.tokenRepository.delete(tokenEntity);
-      throw ApiException.unauthorized('Expired refresh token');
+      throw ApiException.unauthorized(ErrorMessages.INVALID_REFRESH_TOKEN);
     }
 
     return await this.generateTokensToResponse(tokenEntity.user);
@@ -154,7 +174,7 @@ export class AuthService {
       user.password,
     );
     if (!isMatch) {
-      throw ApiException.badRequest('Current password is incorrect');
+      throw ApiException.badRequest(ErrorMessages.PASSWORD_DID_NOT_MATCH);
     }
 
     await this.updatePassword(user, newPassword);

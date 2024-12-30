@@ -38,6 +38,15 @@ import {
   ResendEmailSchema,
   ResendEmailDto,
 } from 'src/validation/resend-email.schema';
+import {
+  RestoreAccountRequestDto,
+  RestoreAccountRequestSchema,
+} from 'src/validation/resrore-account-request.schema copy';
+import {
+  RestoreAccountDto,
+  RestoreAccountSchema,
+} from 'src/validation/restore-account.schema';
+import { ErrorMessages } from 'src/constants/constants';
 
 @Controller('auth')
 export class AuthController {
@@ -75,10 +84,10 @@ export class AuthController {
       TokensType.ACTIVATE_ACCOUNT,
     );
 
-    await this.mailService.sendInvite({
+    await this.mailService.sendMailByType(TokensType.ACTIVATE_ACCOUNT, {
       email,
       token,
-      userName: login,
+      userName: user.login,
     });
 
     return { email, login };
@@ -95,7 +104,7 @@ export class AuthController {
     );
 
     if (!user) {
-      throw ApiException.badRequest('Invalid or expired token');
+      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
     }
 
     await this.authService.activateUser(user, password);
@@ -109,22 +118,13 @@ export class AuthController {
   async resetPasswordRequest(@Body() dto: ResetPasswordRequestDto) {
     const user = await this.userService.findOneByEmail(dto.email);
 
-    if (
-      user.tokens.length &&
-      user.tokens.find((item) => item.tokenType === TokensType.RESET_PASSWORD)
-    ) {
-      throw ApiException.badRequest(
-        'Reset password email already send. Check your mail box, or resend email',
-      );
-    }
-
-    const token = await this.authService.createToken(
+    const token = await this.authService.validateAndCreateToken(
       user,
       TokensType.RESET_PASSWORD,
     );
 
-    await this.mailService.resetPassword({
-      email: dto.email,
+    await this.mailService.sendMailByType(TokensType.RESET_PASSWORD, {
+      email: user.email,
       token,
       userName: user.login,
     });
@@ -142,7 +142,7 @@ export class AuthController {
       TokensType.RESET_PASSWORD,
     );
     if (!user) {
-      throw ApiException.badRequest('Invalid or expired token');
+      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
     }
 
     await this.authService.updatePassword(user, newPassword);
@@ -175,32 +175,53 @@ export class AuthController {
 
     const user = await this.userService.findOneByEmail(email);
 
-    if (
-      user.tokens.length &&
-      user.tokens.filter((item) => item.tokenType === (type as TokensType))
-        .length > 3
-    ) {
-      throw ApiException.badRequest(
-        'Reset password email already send. Check your email box',
-      );
-    }
+    const token = await this.authService.validateAndCreateToken(user, type);
 
-    const token = await this.authService.createToken(user, type as TokensType);
-
-    if (type === TokensType.ACTIVATE_ACCOUNT) {
-      await this.mailService.sendInvite({
-        email,
-        token,
-        userName: user.login,
-      });
-    } else {
-      await this.mailService.resetPassword({
-        email,
-        token,
-        userName: user.login,
-      });
-    }
+    await this.mailService.sendMailByType(type, {
+      email,
+      token,
+      userName: user.login,
+    });
 
     return { message: 'New email successfully sent' };
+  }
+
+  @Public()
+  @Post('restore-request')
+  @UsePipes(new ZodValidationPipe(RestoreAccountRequestSchema))
+  async restoreAccountRequest(@Body() dto: RestoreAccountRequestDto) {
+    const user = await this.userService.findOneByEmail(dto.email);
+
+    const token = await this.authService.validateAndCreateToken(
+      user,
+      TokensType.RESTORE_ACCOUNT,
+    );
+
+    await this.mailService.sendMailByType(TokensType.RESTORE_ACCOUNT, {
+      email: user.email,
+      token,
+      userName: user.login,
+    });
+
+    return { message: 'Restore account email sent' };
+  }
+
+  @Public()
+  @Post('restore-account')
+  @UsePipes(new ZodValidationPipe(RestoreAccountSchema))
+  async restoreAccount(@Body() dto: RestoreAccountDto) {
+    const { token } = dto;
+
+    const user = await this.authService.verifyToken(
+      token,
+      TokensType.RESTORE_ACCOUNT,
+    );
+    if (!user) {
+      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
+    }
+
+    await this.userService.restore(user.email);
+
+    return { message: 'Account successfully restored' };
   }
 }

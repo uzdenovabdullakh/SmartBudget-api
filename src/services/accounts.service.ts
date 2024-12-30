@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ErrorMessages } from 'src/constants/constants';
 import { Account } from 'src/entities/account.entity';
 import { UnlinkedAccount } from 'src/entities/unlinked-account.entity';
 import { User } from 'src/entities/user.entity';
@@ -31,7 +32,7 @@ export class AccountsService {
       withDeleted: true,
     });
     if (accountExist) {
-      throw ApiException.conflictError('Account with this name already exist');
+      throw ApiException.conflictError(ErrorMessages.ACCOUNT_ALREADY_EXISTS);
     }
 
     const unlinkedAccount = this.unlinkedAccountRepository.create(data);
@@ -79,7 +80,7 @@ export class AccountsService {
       .getOne();
 
     if (!account) {
-      throw ApiException.notFound('Account not found');
+      throw ApiException.notFound(ErrorMessages.ACCOUNT_NOT_FOUND);
     }
     return account;
   }
@@ -121,9 +122,7 @@ export class AccountsService {
     const foundIds = accounts.map((account) => account.id);
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
-      throw ApiException.notFound(
-        `Accounts not found for IDs: ${notFoundIds.join(', ')}`,
-      );
+      throw ApiException.notFound(ErrorMessages.ACCOUNT_NOT_FOUND);
     }
 
     await this.accountRepository.delete(ids);
@@ -147,9 +146,7 @@ export class AccountsService {
     const foundIds = accounts.map((account) => account.id);
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
-      throw ApiException.notFound(
-        `Accounts not found for IDs: ${notFoundIds.join(', ')}`,
-      );
+      throw ApiException.notFound(ErrorMessages.ACCOUNT_NOT_FOUND);
     }
 
     await this.accountRepository.restore(ids);

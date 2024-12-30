@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ErrorMessages } from 'src/constants/constants';
 import { CategoryGroup } from 'src/entities/category-group.entity';
 import { Category } from 'src/entities/category.entity';
 import { User } from 'src/entities/user.entity';
@@ -24,7 +25,9 @@ export class CategoryGroupsService {
       withDeleted: true,
     });
     if (categoryGroupExist) {
-      throw ApiException.conflictError('Category group with this name exist');
+      throw ApiException.conflictError(
+        ErrorMessages.CATEGORY_GROUP_ALREADY_EXISTS,
+      );
     }
 
     const createNewCategoryGroup = this.categoryGroupRepository.create(dto);
@@ -106,7 +109,7 @@ export class CategoryGroupsService {
     });
 
     if (!categoryGroupExist) {
-      throw ApiException.notFound('Category group does not exist');
+      throw ApiException.notFound(ErrorMessages.CATEGORY_GROUP_NOT_FOUND);
     }
 
     await this.categoryGroupRepository.softDelete(id);
@@ -132,7 +135,7 @@ export class CategoryGroupsService {
     });
 
     if (!categoryGroupExist) {
-      throw ApiException.notFound('Category group does not exist');
+      throw ApiException.notFound(ErrorMessages.CATEGORY_GROUP_NOT_FOUND);
     }
 
     await this.categoryGroupRepository.restore(id);

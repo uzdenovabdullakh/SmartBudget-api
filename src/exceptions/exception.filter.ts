@@ -34,15 +34,21 @@ export class HttpExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
     const status =
-      exception.constructor === ApiException
+      exception instanceof ApiException
         ? exception.getStatus()
         : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    response.status(status).json({
+    const responseBody = {
       statusCode: status,
       message: exception.message,
       timestamp: new Date().toISOString(),
       path: request.url,
-    });
+    };
+
+    if (exception instanceof ApiException) {
+      responseBody['code'] = exception.code;
+    }
+
+    response.status(status).json(responseBody);
   }
 }
