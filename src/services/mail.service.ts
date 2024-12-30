@@ -1,6 +1,7 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { TokensType } from 'src/constants/enums';
 import { ApiException } from 'src/exceptions/api.exception';
 import { MailData, MailOptions } from 'src/types/mail.types';
 
@@ -30,42 +31,30 @@ export class MailService {
     }
   }
 
-  async resetPassword(mailData: MailOptions) {
+  async sendMailByType(type: TokensType, mailData: MailOptions) {
     const { email, token, userName } = mailData;
-    const url = `${this.configService.get<string>('CLIENT_URL')}/auth/password/confirm/${token}`;
-    await this.sendMail(
-      {
-        to: email,
-        subject: 'Reset your password',
-        payload: url,
-        userName,
-      },
-      'reset-password',
-    );
-  }
+    const urlMap = {
+      [TokensType.ACTIVATE_ACCOUNT]: `${this.configService.get<string>('CLIENT_URL')}/auth/signup/confirm/${token}`,
+      [TokensType.RESET_PASSWORD]: `${this.configService.get<string>('CLIENT_URL')}/auth/password/confirm/${token}`,
+      [TokensType.RESTORE_ACCOUNT]: `${this.configService.get<string>('CLIENT_URL')}/auth/restore/${token}`,
+    };
 
-  async sendInvite(mailData: MailOptions) {
-    const { email, token, userName } = mailData;
-    const url = `${this.configService.get<string>('CLIENT_URL')}/auth/signup/confirm/${token}`;
-    await this.sendMail(
-      {
-        to: email,
-        subject: 'Welcome to the SmartBudget',
-        payload: url,
-        userName,
-      },
-      'invite-user',
-    );
-  }
+    const subjectMap = {
+      [TokensType.ACTIVATE_ACCOUNT]: 'Welcome to the SmartBudget',
+      [TokensType.RESET_PASSWORD]: 'Reset your password',
+      [TokensType.RESTORE_ACCOUNT]: 'Welcome back to the SmartBudget',
+    };
 
-  async sendTwoFactorCode(email: string, code: number) {
+    const url = urlMap[type];
+    const subject = subjectMap[type];
+
+    if (!url || !subject) {
+      throw ApiException.badRequest('Invalid token type for email.');
+    }
+
     await this.sendMail(
-      {
-        to: email,
-        subject: 'Verification code',
-        payload: code,
-      },
-      'two-factor-auth',
+      { to: email, subject, payload: url, userName },
+      type as string,
     );
   }
 }
