@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { QuestionCategoryMapping } from 'src/constants/constants';
+import { BriefQuiz } from 'src/constants/constants';
 import { Brief } from 'src/entities/brief.entity';
 import { CategoryGroup } from 'src/entities/category-group.entity';
 import { Category } from 'src/entities/category.entity';
@@ -21,30 +21,42 @@ export class BriefService {
 
   async processUserAnswers(dto: AnswerToBriefDto, user: User) {
     const brief = this.briefRepository.create({
-      user,
       briefAnswers: dto,
       isCompleted: true,
     });
-    await this.briefRepository.save(brief);
+    await this.briefRepository.update(
+      {
+        user,
+      },
+      brief,
+    );
 
     for (const [question, userAnswer] of Object.entries(dto)) {
-      const mapping = QuestionCategoryMapping[question];
+      const mapping = BriefQuiz[question];
 
       if (mapping) {
-        let categoryGroup = await this.categoryGroupRepository.findOne({
-          where: { name: mapping.group },
-        });
+        // убираем последний элемент из ответов, если это отрицательный ответ
+        const filteredAnswers = userAnswer.filter(
+          (answer) =>
+            answer !== mapping.categories[mapping.categories.length - 1],
+        );
 
-        if (!categoryGroup) {
+        const filteredGroup = filteredAnswers.length ? mapping.group : null;
+
+        let categoryGroup = filteredGroup
+          ? await this.categoryGroupRepository.findOne({
+              where: { name: filteredGroup },
+            })
+          : null;
+
+        if (!categoryGroup && filteredGroup) {
           categoryGroup = this.categoryGroupRepository.create({
-            name: mapping.group,
+            name: filteredGroup,
           });
           await this.categoryGroupRepository.save(categoryGroup);
         }
 
-        const answers = Array.isArray(userAnswer) ? userAnswer : [userAnswer];
-
-        for (const answer of answers) {
+        for (const answer of filteredAnswers) {
           let category = await this.categoryRepository.findOne({
             where: { name: answer, group: { id: categoryGroup.id } },
             relations: ['group'],

@@ -1,11 +1,11 @@
-import { BriefQuestions } from 'src/constants/constants';
+import { BriefQuiz } from 'src/constants/constants';
 import { z } from 'zod';
 
 export const AnswerToBriefSchema = z.object(
   Object.fromEntries(
-    Object.entries(BriefQuestions).map(([question, defaultValue]) => [
+    Object.entries(BriefQuiz).map(([question]) => [
       question,
-      Array.isArray(defaultValue) ? z.array(z.string()) : z.string(),
+      z.array(z.string()),
     ]),
   ),
 );
