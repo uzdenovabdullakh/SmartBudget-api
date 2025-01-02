@@ -6,7 +6,7 @@ import {
 import { User } from 'src/entities/user.entity';
 import { Brief } from 'src/entities/brief.entity';
 import { Budget } from 'src/entities/budget.entity';
-import { BriefQuestions } from 'src/constants/constants';
+import { BriefQuiz } from 'src/constants/constants';
 
 @EventSubscriber()
 export class UserSubscriber implements EntitySubscriberInterface<User> {
@@ -20,7 +20,9 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
     if (databaseEntity.isActivated === false && entity.isActivated === true) {
       const brief = manager.create(Brief, {
         user: entity,
-        briefAnswers: { ...BriefQuestions },
+        briefAnswers: Object.fromEntries(
+          Object.entries(BriefQuiz).map(([question]) => [question, []]),
+        ),
       });
       await manager.save(Brief, brief);
 

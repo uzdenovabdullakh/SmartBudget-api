@@ -1,21 +1,12 @@
+import { BriefQuizType } from 'src/types/brief.types';
+
 export const tokenLifeTime = {
   reset_password: '1h',
   activate_account: '1d',
   refresh_token: '1d',
 };
 
-export const BriefQuestions: Record<string, string | string[]> = {
-  'Tell us about your home': '',
-  'Do you currently have any debt?': [],
-  'How do you get around?': [],
-  'Which of these do you regularly spend money on?': [],
-  'Which of these subscriptions do you have?': [],
-  'What are some expenses that always sneak up on you?': [],
-  'Are you saving, or planning to, for any of these?': [],
-  'What else do you want to include - without stress or guilt?': [],
-} as const;
-
-export const QuestionCategoryMapping = {
+export const BriefQuiz: BriefQuizType = {
   'Tell us about your home': {
     group: 'Home',
     categories: ['I rent', 'I own', 'Other'],
@@ -102,6 +93,7 @@ export const QuestionCategoryMapping = {
       'Home decor',
       'Hobbies',
       'Celebrations',
+      'None of these apply to me',
     ],
   },
 };
