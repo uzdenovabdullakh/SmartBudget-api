@@ -4,4 +4,5 @@ export type UserInfo = {
   login: string;
   settings: object;
   isActivated: boolean;
+  isBriefCompleted: boolean;
 };

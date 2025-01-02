@@ -14,8 +14,5 @@ export const UpdateUserSchema = CreateUserSchema.partial()
   })
   .optional();
 
-export const RestoreUserSchema = CreateUserSchema.pick({ email: true });
-
 export type CreateUserDto = z.infer<typeof CreateUserSchema>;
 export type UpdateUserDto = z.infer<typeof UpdateUserSchema>;
-export type RestoreUserDto = z.infer<typeof RestoreUserSchema>;

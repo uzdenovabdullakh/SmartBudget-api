@@ -7,8 +7,15 @@
     </style>
   </head>
   <body>
-    <p class="headDiv">Code verification</p>
-    <p> {{payload}} — your authorization code.</p>
+    <p class="headDiv">Welcome back to the board of SmartBudget!</p>
+    <p>Hello, {{userName}}!</p>
+    <p>Your data was saved.</p>
+    <p>
+      Please click on the following link, or paste this into your browser to
+      restore your account:</p>
+    <p>
+      <a href="{{payload}}">Click here to restore</a>
+    </p>
     <p>Best Regards, SmartBudget,</p>
   </body>
 </html>

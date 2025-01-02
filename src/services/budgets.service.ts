@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { ErrorMessages } from 'src/constants/constants';
 import { Budget } from 'src/entities/budget.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { CreateBudgetDto, UpdateBudgetDto } from 'src/validation/budget.schema';
-import { In, Not, Repository } from 'typeorm';
+import { In, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class BudgetsService {
@@ -24,7 +25,7 @@ export class BudgetsService {
       withDeleted: true,
     });
     if (budgetExist) {
-      throw ApiException.conflictError('Budget with this name already exsist');
+      throw ApiException.conflictError(ErrorMessages.BUDGET_ALREADY_EXISTS);
     }
 
     const budget = this.budgetRepository.create({
@@ -54,9 +55,10 @@ export class BudgetsService {
           id: user.id,
         },
       },
+      relations: ['goals', 'accounts'],
     });
     if (!budget) {
-      throw ApiException.notFound('Budget not found');
+      throw ApiException.notFound(ErrorMessages.BUDGET_NOT_FOUND);
     }
     return budget;
   }
@@ -67,6 +69,7 @@ export class BudgetsService {
         user: {
           id: user.id,
         },
+        deletedAt: Not(IsNull()),
       },
       withDeleted: true,
     });
@@ -87,7 +90,7 @@ export class BudgetsService {
       withDeleted: true,
     });
     if (budgetExist) {
-      throw ApiException.conflictError('Budget with this name already exsist');
+      throw ApiException.conflictError(ErrorMessages.BUDGET_ALREADY_EXISTS);
     }
 
     await this.budgetRepository.update(
@@ -113,6 +116,7 @@ export class BudgetsService {
       where: {
         id: In(ids),
         user: { id: user.id },
+        deletedAt: Not(IsNull()),
       },
       withDeleted: true,
     });
@@ -120,9 +124,7 @@ export class BudgetsService {
     const foundIds = budgets.map((budget) => budget.id);
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
-      throw ApiException.notFound(
-        `Budgets not found for IDs: ${notFoundIds.join(', ')}`,
-      );
+      throw ApiException.notFound(ErrorMessages.BUDGET_NOT_FOUND);
     }
 
     await this.budgetRepository.delete(ids);
@@ -133,6 +135,7 @@ export class BudgetsService {
       where: {
         id: In(ids),
         user: { id: user.id },
+        deletedAt: Not(IsNull()),
       },
       withDeleted: true,
     });
@@ -140,9 +143,7 @@ export class BudgetsService {
     const foundIds = budgets.map((budget) => budget.id);
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
-      throw ApiException.notFound(
-        `Budgets not found for IDs: ${notFoundIds.join(', ')}`,
-      );
+      throw ApiException.notFound(ErrorMessages.BUDGET_NOT_FOUND);
     }
 
     await this.budgetRepository.restore(ids);

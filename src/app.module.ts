@@ -8,6 +8,11 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { BudgetsModule } from './modules/budgets.module';
 import { CronJobsModule } from './modules/cron-jobs.module';
+import { AccountsModule } from './modules/accounts.module';
+import { CategoriesModule } from './modules/categories.module';
+import { CategoryGroupsModule } from './modules/category-groups.module';
+import { GoalsModule } from './modules/goals.module';
+import { BriefModule } from './modules/brief.module';
 
 @Module({
   imports: [
@@ -21,6 +26,11 @@ import { CronJobsModule } from './modules/cron-jobs.module';
     AuthModule,
     BudgetsModule,
     CronJobsModule,
+    AccountsModule,
+    CategoriesModule,
+    CategoryGroupsModule,
+    GoalsModule,
+    BriefModule,
   ],
   providers: [
     Logger,

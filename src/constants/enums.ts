@@ -2,17 +2,12 @@ export enum TokensType {
   RESET_PASSWORD = 'reset_password',
   ACTIVATE_ACCOUNT = 'activate_account',
   REFRESH_TOKEN = 'refresh_token',
+  RESTORE_ACCOUNT = 'restore_account',
 }
 
 export enum TransactionType {
   INCOME = 'income',
   EXPENSE = 'expense',
-}
-
-export enum GoalsPeriod {
-  WEEKLY = 'weekly',
-  MONTHLY = 'monthly',
-  YEARLY = 'yearly',
 }
 
 export enum UnlinkedAccountType {
@@ -27,10 +22,11 @@ export enum AnalyticsPredictionType {
   CATEGORY_DISTRIBUTION = 'category_distribution',
 }
 
-export enum CategoryLimitResetPeriod {
+export enum Period {
   DAILY = 'daily',
   WEEKLY = 'weekly',
   MONTHLY = 'monthly',
+  YEARLY = 'yearly',
   NONE = 'none',
 }
 
