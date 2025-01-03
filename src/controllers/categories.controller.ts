@@ -10,6 +10,7 @@ import {
   UsePipes,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { HttpMessage } from 'src/constants/constants';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { CategoriesService } from 'src/services/categories.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
@@ -36,7 +37,7 @@ export class CategoriesController {
     const data = await this.categoriesService.createCategory(dto, req.user);
     return {
       data,
-      message: 'Category  was successfully created',
+      message: HttpMessage.CREATE('Category'),
     };
   }
 
@@ -57,7 +58,7 @@ export class CategoriesController {
     const data = await this.categoriesService.updateCategory(id, dto, req.user);
     return {
       data,
-      message: 'Budget was successfully updated',
+      message: HttpMessage.UPDATE('Category'),
     };
   }
 
@@ -68,7 +69,7 @@ export class CategoriesController {
   ) {
     await this.categoriesService.removeCategory(id, req.user);
     return {
-      message: 'Category was successfully removed',
+      message: HttpMessage.DELETE('Category'),
     };
   }
 
@@ -80,7 +81,7 @@ export class CategoriesController {
   ) {
     await this.categoriesService.deleteForever(dto, req.user);
     return {
-      message: 'Categories was successfully removed',
+      message: HttpMessage.DELETE_PLURAL('Category'),
     };
   }
 
@@ -92,7 +93,7 @@ export class CategoriesController {
   ) {
     await this.categoriesService.restoreCategories(dto, req.user);
     return {
-      message: 'Categories was successfully restored',
+      message: HttpMessage.RESTORE('Category'),
     };
   }
 
@@ -109,7 +110,7 @@ export class CategoriesController {
     );
     return {
       data,
-      message: 'Category limit successfully added',
+      message: HttpMessage.CREATE('Category limit'),
     };
   }
 }

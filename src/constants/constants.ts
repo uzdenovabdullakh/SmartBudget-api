@@ -128,3 +128,14 @@ export const ErrorCodes = {
   USER_NOT_ACTIVATED: 'USER_NOT_ACTIVATED',
   TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
 };
+
+export const HttpMessage = {
+  CREATE: (entity: string) => `${entity} was successfully created`,
+  UPDATE: (entity: string) => `${entity} was successfully updated`,
+  DELETE_PLURAL: (entity: string) => `${entity}s were successfully removed`,
+  DELETE: (entity: string) => `${entity} was successfully removed`,
+  RESTORE: (entity: string) => `${entity}s were successfully restored`,
+  RESTORE_SINGULAR: (entity: string) => `${entity} was successfully restored`,
+  EMAIL_SENT: (entity: string) => `${entity} email sent`,
+  CONFIRM: (entity: string) => `${entity} was successfully confirmed`,
+};
