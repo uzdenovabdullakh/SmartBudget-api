@@ -1,5 +1,5 @@
+import { ErrorMessages } from 'src/constants/constants';
 import { z } from 'zod';
-import { ArrayOfIdsSchema } from './array-of-ids.schema';
 
 const BudgetSettingsSchema = z.object({
   currency: z.enum(['USD', 'RUB', 'EUR']),
@@ -7,7 +7,10 @@ const BudgetSettingsSchema = z.object({
 });
 
 export const CreateBudgetSchema = z.object({
-  name: z.string().max(128, 'Name is too long').min(1, 'Name is required'),
+  name: z
+    .string()
+    .max(128, ErrorMessages.TOO_LONG('Name'))
+    .min(1, ErrorMessages.IS_REQUIRED('Name')),
   settings: BudgetSettingsSchema.optional(),
 });
 

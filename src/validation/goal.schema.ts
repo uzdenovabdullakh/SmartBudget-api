@@ -1,20 +1,27 @@
+import { ErrorMessages } from 'src/constants/constants';
 import { Period } from 'src/constants/enums';
 import { z } from 'zod';
 
 const BaseCreateGoalSchema = z.object({
-  name: z.string().max(64, 'Name is too long').min(1, 'Name is required'),
+  name: z
+    .string()
+    .max(64, ErrorMessages.TOO_LONG('Name'))
+    .min(1, ErrorMessages.IS_REQUIRED('Name')),
   targetAmount: z.number().positive().min(1),
   currentAmount: z.number().positive().optional(),
   achieveDate: z.date(),
   period: z.nativeEnum(Period),
-  budgetId: z.string().uuid({ message: 'Invalid UUID format' }).optional(),
-  categoryId: z.string().uuid({ message: 'Invalid UUID format' }).optional(),
+  budgetId: z.string().uuid({ message: ErrorMessages.INVALID_UUID }).optional(),
+  categoryId: z
+    .string()
+    .uuid({ message: ErrorMessages.INVALID_UUID })
+    .optional(),
 });
 
 export const CreateGoalSchema = BaseCreateGoalSchema.refine(
   (data) => data.budgetId || data.categoryId,
   {
-    message: 'Either budgetId or categoryId must be provided.',
+    message: ErrorMessages.MUST_PROVIDED('Either budgetId or categoryId'),
     path: ['budgetId', 'categoryId'],
   },
 );

@@ -121,6 +121,14 @@ export const ErrorMessages = {
     'Too many requests for this action. Please check your email',
   USER_IS_DELETED: 'User is deleted. Please restore your account',
   INVALID_REFRESH_TOKEN: 'Invalid or expired refresh token',
+  ERROR_FORMAT: 'Error format',
+  TRANSACTION_NOT_FOUND: 'Transaction does not exists',
+  INVALID_UUID: 'Invalid UUID format',
+  INVALID_EMAIL: 'Invalid email address',
+  TOO_LONG: (entity: string) => `${entity} too long`,
+  IS_REQUIRED: (entity: string) => `${entity} is required`,
+  MUST_PROVIDED: (entity: string) => `${entity} must be provided`,
+  NOT_ALLOWED: (entity: string) => `${entity} is not allowed`,
 };
 
 export const ErrorCodes = {

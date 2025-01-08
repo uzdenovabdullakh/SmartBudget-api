@@ -1,8 +1,9 @@
+import { ErrorMessages } from 'src/constants/constants';
 import { z } from 'zod';
 
 export const ResetPasswordRequestSchema = z
   .object({
-    email: z.string().email({ message: 'Invalid email address' }),
+    email: z.string().email({ message: ErrorMessages.INVALID_EMAIL }),
   })
   .required();
 

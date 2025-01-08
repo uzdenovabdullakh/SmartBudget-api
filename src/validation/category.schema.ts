@@ -1,11 +1,15 @@
 import { z } from 'zod';
 import { Period } from 'src/constants/enums';
+import { ErrorMessages } from 'src/constants/constants';
 
 export const CategorySchema = z
   .object({
-    name: z.string().max(128, 'Name is too long').min(1, 'Name is required'),
-    groupId: z.string().uuid({ message: 'Invalid UUID format' }),
-    budgetId: z.string().uuid({ message: 'Invalid UUID format' }),
+    name: z
+      .string()
+      .max(128, ErrorMessages.TOO_LONG('Name'))
+      .min(1, ErrorMessages.IS_REQUIRED('Name')),
+    groupId: z.string().uuid({ message: ErrorMessages.INVALID_UUID }),
+    budgetId: z.string().uuid({ message: ErrorMessages.INVALID_UUID }),
   })
   .required();
 
