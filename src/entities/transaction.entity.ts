@@ -17,7 +17,9 @@ export class Transaction extends Timestamps {
 
   @Column({
     nullable: false,
-    type: 'money',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
   })
   amount: number;
 

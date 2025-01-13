@@ -16,7 +16,13 @@ export class CategorySpending extends Timestamps {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ default: 0, type: 'money', name: 'spent_amount' })
+  @Column({
+    default: 0,
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    name: 'spent_amount',
+  })
   spentAmount: number;
 
   @Column({ nullable: false, type: 'timestamp', name: 'period_start' })
@@ -25,7 +31,13 @@ export class CategorySpending extends Timestamps {
   @Column({ nullable: false, type: 'timestamp', name: 'period_end' })
   periodEnd: Date;
 
-  @Column({ nullable: true, type: 'money', name: 'limit_amount' })
+  @Column({
+    nullable: true,
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    name: 'limit_amount',
+  })
   limitAmount: number;
 
   @Column({
