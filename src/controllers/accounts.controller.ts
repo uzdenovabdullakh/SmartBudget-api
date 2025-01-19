@@ -8,6 +8,7 @@ import {
   Req,
   UsePipes,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { AccountsService } from 'src/services/accounts.service';
@@ -17,6 +18,10 @@ import {
   CreateUnlinkedAccountSchema,
 } from 'src/validation/account.schema';
 import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
+import {
+  PaginationQueryDto,
+  PaginationQuerySchema,
+} from 'src/validation/pagination.schema';
 
 @Controller('accounts')
 export class AccountsController {
@@ -37,10 +42,16 @@ export class AccountsController {
 
   @Get('list/:budgetId')
   async getAccounts(
+    @Query(new ZodValidationPipe(PaginationQuerySchema))
+    query: PaginationQueryDto,
     @Param('budgetId', ParseUUIDPipe) budgetId: string,
     @Req() req: AuthenticationRequest,
   ) {
-    return await this.accountService.getUserAccounts(budgetId, req.user);
+    return await this.accountService.getUserAccounts({
+      budgetId,
+      user: req.user,
+      query,
+    });
   }
 
   @Get('removed')

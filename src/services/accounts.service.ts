@@ -5,7 +5,9 @@ import { Account } from 'src/entities/account.entity';
 import { UnlinkedAccount } from 'src/entities/unlinked-account.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
+import { AccountForResponse } from 'src/types/account.type';
 import { CreateUnlinkedAccountDto } from 'src/validation/account.schema';
+import { PaginationQueryDto } from 'src/validation/pagination.schema';
 import { In, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
@@ -50,16 +52,54 @@ export class AccountsService {
     return await this.getUserAccount(account.id, user);
   }
 
-  async getUserAccounts(budgetId: string, user: User) {
-    return await this.accountRepository
-      .createQueryBuilder('account')
-      .innerJoin('account.budget', 'budget')
-      .leftJoinAndSelect('account.unlinkedAccount', 'unlinkedAccount')
-      .leftJoinAndSelect('account.bank', 'bank')
-      .where('budget.id = :budgetId', { budgetId })
-      .andWhere('budget.user.id = :userId', { userId: user.id })
-      .select(['account.id', 'unlinkedAccount.name', 'bank.name'])
-      .getMany();
+  async getUserAccounts({
+    budgetId,
+    user,
+    query,
+  }: {
+    budgetId: string;
+    user: User;
+    query: PaginationQueryDto;
+  }): Promise<AccountForResponse[]> {
+    const { order = 'ASC', page = 1, pageSize = 10 } = query;
+
+    const offset = (page - 1) * pageSize;
+
+    const rawQuery = `
+    SELECT JSON_AGG(
+             JSON_BUILD_OBJECT(
+               'id', sub_a.id,
+               'name', COALESCE(ua.name, ba.name, 'Unknown'),
+               'amount',
+               CASE
+                 WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
+                   CONCAT(b.settings ->> 'currency', COALESCE(ua.amount, 0))
+                 ELSE
+                   CONCAT(COALESCE(ua.amount, 0), b.settings ->> 'currency')
+               END
+             )
+           ) AS accounts
+    FROM (
+           SELECT *
+           FROM accounts a
+           WHERE a.budget_id = $1
+           ORDER BY a.created_at ${order} 
+           LIMIT $3 OFFSET $4
+         ) sub_a
+    LEFT JOIN unlinked_account ua ON ua.id = sub_a.unlinked_account_id
+    LEFT JOIN bank ba ON ba.id = sub_a.bank_id
+    INNER JOIN budgets b ON b.id = $1
+    WHERE b.user_id = $2;
+  `;
+
+    const [result]: { accounts: AccountForResponse[] }[] =
+      await this.accountRepository.query(rawQuery, [
+        budgetId,
+        user.id,
+        pageSize,
+        offset,
+      ]);
+    return result?.accounts || [];
   }
 
   async getUserAccount(id: string, user: User) {
