@@ -44,6 +44,9 @@ export class BudgetsService {
           id: user.id,
         },
       },
+      order: {
+        createdAt: 'ASC',
+      },
     });
   }
 

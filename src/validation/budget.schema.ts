@@ -1,7 +1,15 @@
 import { z } from 'zod';
 
+const currencySymbols = {
+  USD: '$',
+  RUB: '₽',
+  EUR: '€',
+};
+
 const BudgetSettingsSchema = z.object({
-  currency: z.enum(['USD', 'RUB', 'EUR']),
+  currency: z
+    .enum(['USD', 'RUB', 'EUR'])
+    .transform((currencyCode) => currencySymbols[currencyCode]),
   currencyPlacement: z.enum(['before', 'after']),
 });
 

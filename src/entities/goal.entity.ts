@@ -28,13 +28,17 @@ export class Goal extends Timestamps {
 
   @Column({
     nullable: false,
-    type: 'money',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
     name: 'target_amount',
   })
   targetAmount: number;
 
   @Column({
-    type: 'money',
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
     default: 0,
     name: 'current_amount',
   })
