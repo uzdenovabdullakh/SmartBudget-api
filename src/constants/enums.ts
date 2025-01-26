@@ -10,10 +10,11 @@ export enum TransactionType {
   EXPENSE = 'expense',
 }
 
-export enum UnlinkedAccountType {
+export enum AccountType {
   CASH = 'cash',
   CARD = 'card',
   SAVINGS = 'savings',
+  BANK = 'bank',
 }
 
 export enum AnalyticsPredictionType {
