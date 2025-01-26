@@ -5,7 +5,10 @@ import { Account } from 'src/entities/account.entity';
 import { UnlinkedAccount } from 'src/entities/unlinked-account.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
-import { AccountForResponse } from 'src/types/account.type';
+import {
+  AccountDetails,
+  AccountsSummaryResponse,
+} from 'src/types/account.type';
 import { CreateUnlinkedAccountDto } from 'src/validation/account.schema';
 import { PaginationQueryDto } from 'src/validation/pagination.schema';
 import { In, IsNull, Not, Repository } from 'typeorm';
@@ -60,46 +63,90 @@ export class AccountsService {
     budgetId: string;
     user: User;
     query: PaginationQueryDto;
-  }): Promise<AccountForResponse[]> {
-    const { order = 'ASC', page = 1, pageSize = 10 } = query;
+  }): Promise<AccountsSummaryResponse> {
+    const { order = 'ASC', page = 1, pageSize = 10, search = '' } = query;
 
     const offset = (page - 1) * pageSize;
 
-    const rawQuery = `
-    SELECT JSON_AGG(
-             JSON_BUILD_OBJECT(
-               'id', sub_a.id,
-               'name', COALESCE(ua.name, ba.name, 'Unknown'),
-               'amount',
-               CASE
-                 WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
-                   CONCAT(b.settings ->> 'currency', COALESCE(ua.amount, 0))
-                 ELSE
-                   CONCAT(COALESCE(ua.amount, 0), b.settings ->> 'currency')
-               END
-             )
-           ) AS accounts
-    FROM (
-           SELECT *
-           FROM accounts a
-           WHERE a.budget_id = $1
-           ORDER BY a.created_at ${order} 
-           LIMIT $3 OFFSET $4
-         ) sub_a
-    LEFT JOIN unlinked_account ua ON ua.id = sub_a.unlinked_account_id
-    LEFT JOIN bank ba ON ba.id = sub_a.bank_id
-    INNER JOIN budgets b ON b.id = $1
-    WHERE b.user_id = $2;
-  `;
+    const baseQueryBuilder = this.accountRepository
+      .createQueryBuilder('a')
+      .leftJoin('a.unlinkedAccount', 'ua')
+      .leftJoin('a.bank', 'ba')
+      .innerJoin('a.budget', 'b')
+      .where('a.budget_id = :budgetId', { budgetId })
+      .andWhere('b.user_id = :userId', { userId: user.id });
 
-    const [result]: { accounts: AccountForResponse[] }[] =
-      await this.accountRepository.query(rawQuery, [
-        budgetId,
-        user.id,
-        pageSize,
-        offset,
-      ]);
-    return result?.accounts || [];
+    const getAccounts = async () => {
+      const accountsQueryBuilder = baseQueryBuilder
+        .clone()
+        .select([
+          'a.id AS id',
+          `COALESCE(ua.name, ba.name, 'Unknown') AS name`,
+          'a.type AS type',
+          `CASE
+            WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
+              CONCAT(b.settings ->> 'currency', COALESCE(ua.amount, ba.amount, 0))
+            ELSE
+              CONCAT(COALESCE(ua.amount, ba.amount, 0), b.settings ->> 'currency') END
+            AS amount`,
+          'a.created_at AS "createdAt"',
+        ])
+        .orderBy('a.created_at', order)
+        .skip(offset)
+        .take(pageSize);
+
+      if (search) {
+        accountsQueryBuilder.andWhere(
+          '(LOWER(ua.name) LIKE :search OR LOWER(ba.name) LIKE :search)',
+          { search: `%${search}%` },
+        );
+      }
+
+      return accountsQueryBuilder.getRawMany<AccountDetails>();
+    };
+
+    const getTotalBalance = async () => {
+      const sumQueryBuilder = baseQueryBuilder
+        .clone()
+        .select(
+          `CASE
+            WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
+              CONCAT(b.settings ->> 'currency', (COALESCE(SUM(ua.amount), 0) + COALESCE(SUM(ba.amount), 0)))
+            ELSE
+            CONCAT((COALESCE(SUM(ua.amount), 0) + COALESCE(SUM(ba.amount), 0)), b.settings ->> 'currency') END`,
+          'totalBalance',
+        )
+        .groupBy('b.settings');
+
+      return sumQueryBuilder.getRawOne<{ totalBalance: string }>();
+    };
+
+    const getTotalCount = async () => {
+      const countQueryBuilder = baseQueryBuilder
+        .clone()
+        .select('COUNT(*)', 'totalCount');
+
+      if (search) {
+        countQueryBuilder.andWhere(
+          '(LOWER(ua.name) LIKE :search OR LOWER(ba.name) LIKE :search)',
+          { search: `%${search.toLowerCase()}%` },
+        );
+      }
+
+      return countQueryBuilder.getRawOne<{ totalCount: number }>();
+    };
+
+    const [accounts, totalBalanceResult, totalCountResult] = await Promise.all([
+      getAccounts(),
+      getTotalBalance(),
+      getTotalCount(),
+    ]);
+
+    return {
+      accounts,
+      totalBalance: totalBalanceResult?.totalBalance,
+      totalPages: Math.ceil((totalCountResult?.totalCount || 0) / pageSize),
+    };
   }
 
   async getUserAccount(id: string, user: User) {
