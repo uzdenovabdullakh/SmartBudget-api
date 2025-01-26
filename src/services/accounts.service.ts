@@ -49,6 +49,7 @@ export class AccountsService {
         id: data.budgetId,
       },
       unlinkedAccount: newUnlinkedAccount,
+      type: data.type,
     });
     const account = await this.accountRepository.save(newAccount);
 
@@ -151,20 +152,25 @@ export class AccountsService {
 
   async getUserAccount(id: string, user: User) {
     const account = await this.accountRepository
-      .createQueryBuilder('account')
-      .innerJoin('account.budget', 'budget')
-      .leftJoinAndSelect('account.unlinkedAccount', 'unlinkedAccount')
-      .leftJoinAndSelect('account.bank', 'bank')
-      .where('account.id = :id', { id: id })
-      .andWhere('budget.user.id = :userId', { userId: user.id })
+      .createQueryBuilder('a')
+      .innerJoin('a.budget', 'b')
+      .leftJoinAndSelect('a.unlinkedAccount', 'ua')
+      .leftJoinAndSelect('a.bank', 'ba')
+      .where('a.id = :id', { id: id })
+      .andWhere('b.user.id = :userId', { userId: user.id })
       .select([
-        'account.id',
-        'unlinkedAccount.name',
-        'unlinkedAccount.type',
-        'unlinkedAccount.amount',
-        'bank.name',
+        'a.id AS id',
+        `COALESCE(ua.name, ba.name, 'Unknown') AS name`,
+        'a.type AS type',
+        `CASE
+          WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
+            CONCAT(b.settings ->> 'currency', COALESCE(ua.amount, ba.amount, 0))
+          ELSE
+            CONCAT(COALESCE(ua.amount, ba.amount, 0), b.settings ->> 'currency') END
+          AS amount`,
+        'a.created_at AS "createdAt"',
       ])
-      .getOne();
+      .getRawOne<AccountDetails>();
 
     if (!account) {
       throw ApiException.notFound(ErrorMessages.ACCOUNT_NOT_FOUND);
