@@ -10,6 +10,14 @@ export class Bank extends Timestamps {
   @Column({ type: 'varchar', nullable: false, length: 128 })
   name: string;
 
+  @Column({
+    nullable: false,
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+  })
+  amount: number;
+
   @Column({ nullable: false, type: 'text' })
   access_token: string;
 

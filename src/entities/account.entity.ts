@@ -1,5 +1,6 @@
 import {
   Check,
+  Column,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -12,6 +13,7 @@ import { Budget } from './budget.entity';
 import { Bank } from './bank.entity';
 import { UnlinkedAccount } from './unlinked-account.entity';
 import { Transaction } from './transaction.entity';
+import { AccountType } from 'src/constants/enums';
 
 @Entity({ name: 'accounts' })
 @Check(
@@ -24,6 +26,14 @@ import { Transaction } from './transaction.entity';
 export class Account extends Timestamps {
   @PrimaryGeneratedColumn('uuid')
   id: string;
+
+  @Column({
+    type: 'enum',
+    enum: AccountType,
+    enumName: 'enum_account_type',
+    nullable: false,
+  })
+  type: AccountType;
 
   @ManyToOne(() => Budget, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
