@@ -1,6 +1,7 @@
 import { Injectable, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+import { ErrorMessages } from 'src/constants/constants';
 import { PUBLIC_KEY } from 'src/decorators/public.decorator';
 import { ApiException } from 'src/exceptions/api.exception';
 
@@ -22,7 +23,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
   handleRequest(err, user, info) {
     if (err || !user) {
-      throw err || ApiException.unauthorized('Invalid or missing token');
+      throw err || ApiException.unauthorized(ErrorMessages.INVALID_TOKEN);
     }
     return user;
   }

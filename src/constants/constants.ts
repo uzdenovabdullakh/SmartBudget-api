@@ -124,6 +124,7 @@ export const ErrorMessages = {
 };
 
 export const ErrorCodes = {
+  UNAUTHORIZED: 'UNAUTHORIZED',
   USER_DELETED: 'USER_DELETED',
   USER_NOT_ACTIVATED: 'USER_NOT_ACTIVATED',
   TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
