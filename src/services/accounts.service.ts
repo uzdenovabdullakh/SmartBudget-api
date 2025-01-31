@@ -93,8 +93,8 @@ export class AccountsService {
           'a.created_at AS "createdAt"',
         ])
         .orderBy('a.created_at', order)
-        .skip(offset)
-        .take(pageSize);
+        .offset(offset)
+        .limit(pageSize);
 
       if (search) {
         accountsQueryBuilder.andWhere(
