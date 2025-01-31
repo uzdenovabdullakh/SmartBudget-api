@@ -4,7 +4,7 @@ import { TypeOrmModule } from './modules/typeorm.module';
 import { MailModule } from './modules/mail.module';
 import { UsersModule } from './modules/users.module';
 import { AuthModule } from './modules/auth.module';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { BudgetsModule } from './modules/budgets.module';
 import { CronJobsModule } from './modules/cron-jobs.module';
@@ -13,6 +13,7 @@ import { CategoriesModule } from './modules/categories.module';
 import { CategoryGroupsModule } from './modules/category-groups.module';
 import { GoalsModule } from './modules/goals.module';
 import { BriefModule } from './modules/brief.module';
+import { HttpExceptionFilter } from './exceptions/exception.filter';
 
 @Module({
   imports: [
@@ -37,6 +38,10 @@ import { BriefModule } from './modules/brief.module';
     {
       provide: APP_GUARD,
       useClass: JwtAuthGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter,
     },
   ],
 })
