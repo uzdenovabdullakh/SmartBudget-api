@@ -1,7 +1,9 @@
-import { Module } from '@nestjs/common';
+import { Global, Module } from '@nestjs/common';
 import { AcceptLanguageResolver, I18nModule, QueryResolver } from 'nestjs-i18n';
 import * as path from 'path';
+import { TranslationService } from 'src/services/translation.service';
 
+@Global()
 @Module({
   imports: [
     I18nModule.forRoot({
@@ -16,5 +18,7 @@ import * as path from 'path';
       ],
     }),
   ],
+  providers: [TranslationService],
+  exports: [TranslationService],
 })
 export class LocalizationModule {}

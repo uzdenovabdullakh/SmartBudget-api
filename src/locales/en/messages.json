@@ -1,0 +1,10 @@
+{
+  "created": "{entity} was successfully created",
+  "updated": "{entity} was successfully updated",
+  "removed": "{entity} was successfully removed",
+  "removed_plural": "{entity}s were successfully removed",
+  "restored": "{entity} was successfully restored",
+  "restored_plural": "{entity}s were successfully restored",
+  "confirmed": "{entity} was successfully confirmed",
+  "email_sent": "{entity} email sent"
+}

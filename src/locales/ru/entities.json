@@ -1,0 +1,14 @@
+{
+  "account": "Счет",
+  "budget": "Бюджет",
+  "category_group": "Группа категорий",
+  "user": "Пользователь",
+  "goal": "Цель",
+  "category": "Категория",
+  "unlinked_account": "Счет без привязки к банку",
+  "password_reset": "сброса пароля",
+  "password": "Пароль",
+  "new": "Новое",
+  "restore_account": "восстановление аккаунта",
+  "category_limit": "Лимит по категории"
+}
