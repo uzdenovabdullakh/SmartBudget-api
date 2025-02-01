@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ErrorCodes, ErrorMessages } from 'src/constants/constants';
+import { TranslationService } from './translation.service';
+import { ErrorCodes } from 'src/constants/constants';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { UserInfo } from 'src/types/user.types';
@@ -11,6 +12,7 @@ import { IsNull, Not, Repository } from 'typeorm';
 export class UsersService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    private readonly t: TranslationService,
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
@@ -21,11 +23,13 @@ export class UsersService {
     if (findUser) {
       if (!findUser.isActivated) {
         throw ApiException.badRequest(
-          ErrorMessages.USER_IS_NOT_ACTIVATED,
+          this.t.tException('user_is_not_activated'),
           ErrorCodes.USER_NOT_ACTIVATED,
         );
       }
-      throw ApiException.badRequest(ErrorMessages.USER_ALREADY_EXISTS);
+      throw ApiException.badRequest(
+        this.t.tException('already_exists', 'user'),
+      );
     }
 
     const user = this.userRepository.create(dto);
@@ -41,7 +45,8 @@ export class UsersService {
       relations: ['brief'],
     });
 
-    if (!user) throw ApiException.notFound(ErrorMessages.USER_NOT_FOUND);
+    if (!user)
+      throw ApiException.notFound(this.t.tException('not_found', 'user'));
 
     return {
       id: user.id,
@@ -60,7 +65,8 @@ export class UsersService {
       },
       relations: ['budgets', 'tokens'],
     });
-    if (!user) throw ApiException.notFound(ErrorMessages.USER_NOT_FOUND);
+    if (!user)
+      throw ApiException.notFound(this.t.tException('not_found', 'user'));
 
     return user;
   }
@@ -76,8 +82,10 @@ export class UsersService {
         },
         withDeleted: true,
       });
-      if (existEmail)
-        throw ApiException.badRequest(ErrorMessages.USER_ALREADY_EXISTS);
+      if (!existEmail)
+        throw ApiException.badRequest(
+          this.t.tException('already_exists', 'user'),
+        );
     }
 
     await this.userRepository.update({ id }, dto);

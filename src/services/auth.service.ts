@@ -7,13 +7,10 @@ import { JwtTokenService } from './jwt.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BcryptService } from './bcrypt.service';
 import { ApiException } from 'src/exceptions/api.exception';
-import {
-  ErrorCodes,
-  ErrorMessages,
-  tokenLifeTime,
-} from 'src/constants/constants';
+import { ErrorCodes, tokenLifeTime } from 'src/constants/constants';
 import { ChangePasswordDto } from 'src/validation/change-password.schema';
 import { parseDuration } from 'src/utils/helpers';
+import { TranslationService } from './translation.service';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +21,7 @@ export class AuthService {
     private readonly tokenRepository: Repository<Token>,
     private readonly jwtService: JwtTokenService,
     private readonly bcryptService: BcryptService,
+    private readonly t: TranslationService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -46,7 +44,7 @@ export class AuthService {
 
     if (user.deletedAt) {
       throw ApiException.conflictError(
-        ErrorMessages.USER_IS_DELETED,
+        this.t.tException('user_is_deleted'),
         ErrorCodes.USER_DELETED,
       );
     }
@@ -101,7 +99,7 @@ export class AuthService {
 
     if (tokenCount > 3) {
       throw ApiException.badRequest(
-        ErrorMessages.TOO_MANY_REQUESTS,
+        this.t.tException('too_many_requests'),
         ErrorCodes.TOO_MANY_REQUESTS,
       );
     }
@@ -116,13 +114,17 @@ export class AuthService {
     });
 
     if (!tokenEntity) {
-      throw ApiException.unauthorized(ErrorMessages.INVALID_REFRESH_TOKEN);
+      throw ApiException.unauthorized(
+        this.t.tException('invalid_refresh_token'),
+      );
     }
 
     const isValid = await this.jwtService.validateToken(refreshToken);
     if (!isValid) {
       await this.tokenRepository.delete(tokenEntity);
-      throw ApiException.unauthorized(ErrorMessages.INVALID_REFRESH_TOKEN);
+      throw ApiException.unauthorized(
+        this.t.tException('invalid_refresh_token'),
+      );
     }
 
     return await this.generateTokensToResponse(tokenEntity.user);
@@ -174,7 +176,9 @@ export class AuthService {
       user.password,
     );
     if (!isMatch) {
-      throw ApiException.badRequest(ErrorMessages.PASSWORD_DID_NOT_MATCH);
+      throw ApiException.badRequest(
+        this.t.tException('password_did_not_match'),
+      );
     }
 
     await this.updatePassword(user, newPassword);

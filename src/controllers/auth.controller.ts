@@ -46,7 +46,6 @@ import {
   RestoreAccountDto,
   RestoreAccountSchema,
 } from 'src/validation/restore-account.schema';
-import { ErrorMessages } from 'src/constants/constants';
 import { TranslationService } from 'src/services/translation.service';
 
 @Controller('auth')
@@ -106,7 +105,7 @@ export class AuthController {
     );
 
     if (!user) {
-      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
+      throw ApiException.badRequest(this.t.tException('invalid_token'));
     }
 
     await this.authService.activateUser(user, password);
@@ -144,7 +143,7 @@ export class AuthController {
       TokensType.RESET_PASSWORD,
     );
     if (!user) {
-      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
+      throw ApiException.badRequest(this.t.tException('invalid_token'));
     }
 
     await this.authService.updatePassword(user, newPassword);
@@ -219,7 +218,7 @@ export class AuthController {
       TokensType.RESTORE_ACCOUNT,
     );
     if (!user) {
-      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
+      throw ApiException.badRequest(this.t.tException('invalid_token'));
     }
 
     await this.userService.restore(user.email);

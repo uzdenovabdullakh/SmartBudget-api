@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ErrorMessages } from 'src/constants/constants';
+import { TranslationService } from './translation.service';
 import { CategoryGroup } from 'src/entities/category-group.entity';
 import { Category } from 'src/entities/category.entity';
 import { User } from 'src/entities/user.entity';
@@ -15,6 +15,7 @@ export class CategoryGroupsService {
     private readonly categoryGroupRepository: Repository<CategoryGroup>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    private readonly t: TranslationService,
   ) {}
 
   async createCategoryGroup(dto: CreateCategoryGroupDto) {
@@ -26,7 +27,7 @@ export class CategoryGroupsService {
     });
     if (categoryGroupExist) {
       throw ApiException.conflictError(
-        ErrorMessages.CATEGORY_GROUP_ALREADY_EXISTS,
+        this.t.tException('already_exists', 'category_group'),
       );
     }
 
@@ -109,7 +110,9 @@ export class CategoryGroupsService {
     });
 
     if (!categoryGroupExist) {
-      throw ApiException.notFound(ErrorMessages.CATEGORY_GROUP_NOT_FOUND);
+      throw ApiException.notFound(
+        this.t.tException('not_found', 'category_group'),
+      );
     }
 
     await this.categoryGroupRepository.softDelete(id);
@@ -135,7 +138,9 @@ export class CategoryGroupsService {
     });
 
     if (!categoryGroupExist) {
-      throw ApiException.notFound(ErrorMessages.CATEGORY_GROUP_NOT_FOUND);
+      throw ApiException.notFound(
+        this.t.tException('not_found', 'category_group'),
+      );
     }
 
     await this.categoryGroupRepository.restore(id);

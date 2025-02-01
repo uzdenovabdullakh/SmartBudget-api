@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ErrorMessages } from 'src/constants/constants';
+import { TranslationService } from './translation.service';
 import { Account } from 'src/entities/account.entity';
 import { UnlinkedAccount } from 'src/entities/unlinked-account.entity';
 import { User } from 'src/entities/user.entity';
@@ -20,6 +20,7 @@ export class AccountsService {
     private readonly accountRepository: Repository<Account>,
     @InjectRepository(UnlinkedAccount)
     private readonly unlinkedAccountRepository: Repository<UnlinkedAccount>,
+    private readonly t: TranslationService,
   ) {}
 
   async createUnlinkedAccount(data: CreateUnlinkedAccountDto, user: User) {
@@ -37,7 +38,9 @@ export class AccountsService {
       withDeleted: true,
     });
     if (accountExist) {
-      throw ApiException.conflictError(ErrorMessages.ACCOUNT_ALREADY_EXISTS);
+      throw ApiException.badRequest(
+        this.t.tException('already_exists', 'account'),
+      );
     }
 
     const unlinkedAccount = this.unlinkedAccountRepository.create(data);
@@ -173,7 +176,7 @@ export class AccountsService {
       .getRawOne<AccountDetails>();
 
     if (!account) {
-      throw ApiException.notFound(ErrorMessages.ACCOUNT_NOT_FOUND);
+      throw ApiException.notFound(this.t.tException('not_found', 'account'));
     }
     return account;
   }
@@ -215,7 +218,7 @@ export class AccountsService {
     const foundIds = accounts.map((account) => account.id);
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
-      throw ApiException.notFound(ErrorMessages.ACCOUNT_NOT_FOUND);
+      throw ApiException.notFound(this.t.tException('not_found', 'account'));
     }
 
     await this.accountRepository.delete(ids);
@@ -239,7 +242,7 @@ export class AccountsService {
     const foundIds = accounts.map((account) => account.id);
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
-      throw ApiException.notFound(ErrorMessages.ACCOUNT_NOT_FOUND);
+      throw ApiException.notFound(this.t.tException('not_found', 'account'));
     }
 
     await this.accountRepository.restore(ids);
