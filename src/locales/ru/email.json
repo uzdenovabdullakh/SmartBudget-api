@@ -1,0 +1,19 @@
+{
+  "header": {
+    "activate": "Welcome to the board of SmartBudget!",
+    "reset_password": "Reset your password",
+    "restore_account": "Welcome back to the board of SmartBudget!"
+  },
+  "greeting": "Hello",
+  "instructions":  {
+    "activate": "Please click on the following link, or paste this into your browser to start using the service",
+    "reset_password": "Please click on the following link, or paste this into your browser to reset your password",
+    "restore_account": "Please click on the following link, or paste this into your browser to restore your account"
+  },
+  "link": {
+    "activate": "Click here to join",
+    "reset_password": "Click here to reset your password",
+    "restore_account": "Click here to restore"
+  },
+  "signature": "Best Regards, SmartBudget"
+}
