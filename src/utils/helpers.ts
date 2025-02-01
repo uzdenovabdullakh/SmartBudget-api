@@ -1,10 +1,9 @@
-import { ErrorMessages } from 'src/constants/constants';
 import { Period } from 'src/constants/enums';
 import { ApiException } from 'src/exceptions/api.exception';
 
 export const parseDuration = (duration: string): number => {
   const match = duration.match(/^(\d+)([smhd])$/);
-  if (!match) throw ApiException.serverError(ErrorMessages.INVALID_DURATION);
+  if (!match) throw ApiException.serverError('Invalid duration format');
 
   const [, value, unit] = match;
   const multiplier = {

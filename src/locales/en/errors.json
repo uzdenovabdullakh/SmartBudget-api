@@ -1,0 +1,19 @@
+{
+  "invalid_token": "Invalid or expired token",
+  "not_found": "{entity} does not exist",
+  "already_exists": "{entity} already exists",
+  "user_is_not_activated": "User is not activated. Resend activation email",
+  "invalid_credentials": "Invalid credentials",
+  "invalid_token_type": "Invalid token type",
+  "mail_not_send": "Mail was not sent",
+  "password_did_not_match": "Current password is incorrect",
+  "too_many_requests": "Too many requests for this action. Please check your email",
+  "user_is_deleted": "User is deleted. Please restore your account",
+  "invalid_refresh_token": "Invalid or expired refresh token",
+  "account": "Account",
+  "budget": "Budget",
+  "category_group": "Category group",
+  "user": "User",
+  "goal": "Goal",
+  "category": "Category"
+}

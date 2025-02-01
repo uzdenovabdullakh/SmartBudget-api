@@ -12,4 +12,14 @@ export class TranslationService {
       lang,
     });
   }
+
+  public tException(error: string, entity?: string) {
+    const lang = I18nContext.current().lang;
+
+    const entityTranslation = entity ? this.i18n.t(`entities.${entity}`) : '';
+    return this.i18n.t(`errors.${error}`, {
+      args: entity ? { entity: entityTranslation } : {},
+      lang,
+    });
+  }
 }
