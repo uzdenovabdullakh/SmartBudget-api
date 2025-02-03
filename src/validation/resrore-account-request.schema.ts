@@ -1,8 +1,8 @@
-import { z } from 'zod';
+import { z } from 'src/utils/zod-map';
 
 export const RestoreAccountRequestSchema = z
   .object({
-    email: z.string().email({ message: 'Invalid email address' }),
+    email: z.string().email(),
   })
   .required();
 

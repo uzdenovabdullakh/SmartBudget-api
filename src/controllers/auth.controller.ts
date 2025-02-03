@@ -41,7 +41,7 @@ import {
 import {
   RestoreAccountRequestDto,
   RestoreAccountRequestSchema,
-} from 'src/validation/resrore-account-request.schema copy';
+} from 'src/validation/resrore-account-request.schema';
 import {
   RestoreAccountDto,
   RestoreAccountSchema,
