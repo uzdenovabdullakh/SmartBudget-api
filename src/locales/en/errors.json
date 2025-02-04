@@ -10,10 +10,21 @@
   "too_many_requests": "Too many requests for this action. Please check your email",
   "user_is_deleted": "User is deleted. Please restore your account",
   "invalid_refresh_token": "Invalid or expired refresh token",
-  "account": "Account",
-  "budget": "Budget",
-  "category_group": "Category group",
-  "user": "User",
-  "goal": "Goal",
-  "category": "Category"
+  "validation": {
+    "Name too long": "Name too long",
+    "Name is required": "Name is required",
+    "Token is required": "Token is required",
+    "Invalid uuid":"Invalid uuid",
+    "Either budgetId or categoryId must be provided.": "Either budgetId or categoryId must be provided.",
+    "Invalid email address": "Invalid email address",
+    "Color 'Red' is not allowed": "Color 'Red' is not allowed",
+    "Password must be at least 8 characters long": "Password must be at least 8 characters long",
+    "Password must be less than 32 characters long": "Password must be less than 32 characters long",
+    "Password must contain at least one uppercase letter": "Password must contain at least one uppercase letter",
+    "Password must contain at least one lowercase letter": "Password must contain at least one lowercase letter",
+    "Password must contain at least one number": "Password must contain at least one number",
+    "Password must contain at least one special character": "Password must contain at least one special character",
+    "Array must contain at least one UUID": "Array must contain at least one UUID",
+    "Array must not contain more than 10 UUIDs": "Array must not contain more than 10 UUIDs"
+  }
 }

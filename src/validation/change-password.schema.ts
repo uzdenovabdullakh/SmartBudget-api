@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'src/utils/zod-map';
 import { passwordSchema } from './password.schema';
 
 export const ChangePasswordSchema = z

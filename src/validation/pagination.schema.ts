@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import { z } from 'src/utils/zod-map';
 
 export const PaginationQuerySchema = z.object({
   order: z.enum(['ASC', 'DESC']).optional(),

@@ -1,8 +1,11 @@
-import { z } from 'zod';
+import i18next from 'i18next';
+import { z } from 'src/utils/zod-map';
 
 export const ResetPasswordRequestSchema = z
   .object({
-    email: z.string().email({ message: 'Invalid email address' }),
+    email: z
+      .string()
+      .email(i18next.t('validation.Invalid email address', { ns: 'common' })),
   })
   .required();
 

@@ -1,11 +1,19 @@
-import { z } from 'zod';
+import i18next from 'i18next';
 import { Period } from 'src/constants/enums';
+import { z } from 'src/utils/zod-map';
 
 export const CategorySchema = z
   .object({
-    name: z.string().max(128, 'Name is too long').min(1, 'Name is required'),
-    groupId: z.string().uuid({ message: 'Invalid UUID format' }),
-    budgetId: z.string().uuid({ message: 'Invalid UUID format' }),
+    name: z
+      .string()
+      .max(128, i18next.t('validation.Name too long', { ns: 'common' }))
+      .min(1, i18next.t('validation.Name is required', { ns: 'common' })),
+    groupId: z
+      .string()
+      .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' })),
+    budgetId: z
+      .string()
+      .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' })),
   })
   .required();
 
