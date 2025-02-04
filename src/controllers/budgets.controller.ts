@@ -20,10 +20,14 @@ import {
   UpdateBudgetDto,
 } from 'src/validation/budget.schema';
 import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
+import { TranslationService } from 'src/services/translation.service';
 
 @Controller('budgets')
 export class BudgetsController {
-  constructor(private readonly budgetService: BudgetsService) {}
+  constructor(
+    private readonly budgetService: BudgetsService,
+    private readonly t: TranslationService,
+  ) {}
 
   @Post()
   @UsePipes(new ZodValidationPipe(CreateBudgetSchema))
@@ -34,7 +38,7 @@ export class BudgetsController {
     const data = await this.budgetService.createBudget(dto, req.user);
     return {
       data,
-      message: 'Budget was successfully created',
+      message: this.t.tMessage('created', 'budget'),
     };
   }
 
@@ -65,7 +69,7 @@ export class BudgetsController {
     const data = await this.budgetService.updateBudget(id, dto, req.user);
     return {
       data,
-      message: 'Budget was successfully updated',
+      message: this.t.tMessage('updated', 'budget'),
     };
   }
 
@@ -76,7 +80,7 @@ export class BudgetsController {
   ) {
     await this.budgetService.deleteBudget(id, req.user);
     return {
-      message: 'Budget was successfully removed',
+      message: this.t.tMessage('removed', 'budget'),
     };
   }
 
@@ -88,7 +92,7 @@ export class BudgetsController {
   ) {
     await this.budgetService.deleteForever(dto, req.user);
     return {
-      message: 'Budgets was successfully removed',
+      message: this.t.tMessage('removed_plural', 'budget'),
     };
   }
 
@@ -100,7 +104,7 @@ export class BudgetsController {
   ) {
     await this.budgetService.restoreBudgets(dto, req.user);
     return {
-      message: 'Budgets was successfully restored',
+      message: this.t.tMessage('restored_plural', 'budget'),
     };
   }
 }

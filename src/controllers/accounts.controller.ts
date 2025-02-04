@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { AccountsService } from 'src/services/accounts.service';
+import { TranslationService } from 'src/services/translation.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
   CreateUnlinkedAccountDto,
@@ -25,7 +26,10 @@ import {
 
 @Controller('accounts')
 export class AccountsController {
-  constructor(private readonly accountService: AccountsService) {}
+  constructor(
+    private readonly accountService: AccountsService,
+    private readonly t: TranslationService,
+  ) {}
 
   @Post('unlinked-account')
   @UsePipes(new ZodValidationPipe(CreateUnlinkedAccountSchema))
@@ -36,7 +40,7 @@ export class AccountsController {
     const data = await this.accountService.createUnlinkedAccount(dto, req.user);
     return {
       data,
-      message: 'Unlikned account was successfully created',
+      message: this.t.tMessage('created', 'unlinked_account'),
     };
   }
 
@@ -74,7 +78,7 @@ export class AccountsController {
   ) {
     await this.accountService.deleteAccount(id, req.user);
     return {
-      message: 'Account was successfully removed',
+      message: this.t.tMessage('removed', 'account'),
     };
   }
 
@@ -86,7 +90,7 @@ export class AccountsController {
   ) {
     await this.accountService.deleteForever(dto, req.user);
     return {
-      message: 'Accounts was successfully removed',
+      message: this.t.tMessage('removed_plural', 'account'),
     };
   }
 
@@ -98,7 +102,7 @@ export class AccountsController {
   ) {
     await this.accountService.restoreAccounts(dto, req.user);
     return {
-      message: 'Accounts was successfully restored',
+      message: this.t.tMessage('restored_plural', 'account'),
     };
   }
 }

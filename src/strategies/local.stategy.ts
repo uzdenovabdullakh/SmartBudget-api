@@ -5,11 +5,14 @@ import { AuthService } from 'src/services/auth.service';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { LoginSchema } from 'src/validation/login.schema';
-import { ErrorMessages } from 'src/constants/constants';
+import { TranslationService } from 'src/services/translation.service';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
-  constructor(private readonly authService: AuthService) {
+  constructor(
+    private readonly authService: AuthService,
+    private readonly t: TranslationService,
+  ) {
     super({ usernameField: 'email' });
   }
 
@@ -24,7 +27,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
 
     const user = await this.authService.validateUser(email, password);
     if (!user) {
-      throw ApiException.badRequest(ErrorMessages.INVALID_CREADENTIALS);
+      throw ApiException.badRequest(this.t.tException('invalid_credentials'));
     }
     return user;
   }

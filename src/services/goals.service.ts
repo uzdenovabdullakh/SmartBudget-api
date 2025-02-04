@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ErrorMessages } from 'src/constants/constants';
+import { TranslationService } from './translation.service';
 import { Budget } from 'src/entities/budget.entity';
 import { Category } from 'src/entities/category.entity';
 import { Goal } from 'src/entities/goal.entity';
@@ -18,6 +18,7 @@ export class GoalsService {
     private readonly budgetRepository: Repository<Budget>,
     @InjectRepository(Category)
     private readonly categoryRepository: Repository<Category>,
+    private readonly t: TranslationService,
   ) {}
 
   async createGoal(dto: CreateGoalDto, user: User) {
@@ -35,7 +36,7 @@ export class GoalsService {
       });
 
       if (!budget) {
-        throw ApiException.notFound(ErrorMessages.BUDGET_NOT_FOUND);
+        throw ApiException.notFound(this.t.tException('not_found', 'budget'));
       }
 
       goal.budget = budget;
@@ -55,7 +56,7 @@ export class GoalsService {
       });
 
       if (!category) {
-        throw ApiException.notFound(ErrorMessages.CATEGORY_NOT_FOUND);
+        throw ApiException.notFound(this.t.tException('not_found', 'category'));
       }
 
       category.goal = goal;
@@ -78,7 +79,7 @@ export class GoalsService {
       },
     });
     if (!goal) {
-      throw ApiException.notFound(ErrorMessages.GOAL_NOT_FOUND);
+      throw ApiException.notFound(this.t.tException('not_found', 'goal'));
     }
 
     return goal;

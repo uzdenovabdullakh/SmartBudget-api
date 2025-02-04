@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ErrorMessages } from 'src/constants/constants';
+import { TranslationService } from './translation.service';
 import { Budget } from 'src/entities/budget.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
@@ -12,6 +12,7 @@ export class BudgetsService {
   constructor(
     @InjectRepository(Budget)
     private readonly budgetRepository: Repository<Budget>,
+    private readonly t: TranslationService,
   ) {}
 
   async createBudget(data: CreateBudgetDto, user: User) {
@@ -25,7 +26,9 @@ export class BudgetsService {
       withDeleted: true,
     });
     if (budgetExist) {
-      throw ApiException.conflictError(ErrorMessages.BUDGET_ALREADY_EXISTS);
+      throw ApiException.conflictError(
+        this.t.tException('already_exists', 'budget'),
+      );
     }
 
     const budget = this.budgetRepository.create({
@@ -61,7 +64,7 @@ export class BudgetsService {
       relations: ['goals', 'accounts'],
     });
     if (!budget) {
-      throw ApiException.notFound(ErrorMessages.BUDGET_NOT_FOUND);
+      throw ApiException.notFound(this.t.tException('not_found', 'budget'));
     }
     return budget;
   }
@@ -93,7 +96,9 @@ export class BudgetsService {
       withDeleted: true,
     });
     if (budgetExist) {
-      throw ApiException.conflictError(ErrorMessages.BUDGET_ALREADY_EXISTS);
+      throw ApiException.conflictError(
+        this.t.tException('already_exists', 'budget'),
+      );
     }
 
     await this.budgetRepository.update(
@@ -127,7 +132,7 @@ export class BudgetsService {
     const foundIds = budgets.map((budget) => budget.id);
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
-      throw ApiException.notFound(ErrorMessages.BUDGET_NOT_FOUND);
+      throw ApiException.notFound(this.t.tException('not_found', 'budget'));
     }
 
     await this.budgetRepository.delete(ids);
@@ -146,7 +151,7 @@ export class BudgetsService {
     const foundIds = budgets.map((budget) => budget.id);
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
-      throw ApiException.notFound(ErrorMessages.BUDGET_NOT_FOUND);
+      throw ApiException.notFound(this.t.tException('not_found', 'budget'));
     }
 
     await this.budgetRepository.restore(ids);

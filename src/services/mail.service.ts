@@ -1,7 +1,7 @@
 import { MailerService } from '@nestjs-modules/mailer';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ErrorMessages } from 'src/constants/constants';
+import { TranslationService } from './translation.service';
 import { TokensType } from 'src/constants/enums';
 import { ApiException } from 'src/exceptions/api.exception';
 import { MailData, MailOptions } from 'src/types/mail.types';
@@ -11,6 +11,7 @@ export class MailService {
   constructor(
     private readonly mailerService: MailerService,
     private readonly configService: ConfigService,
+    private readonly t: TranslationService,
   ) {}
 
   private async sendMail<T>(data: MailData<T>, templatePath: string) {
@@ -28,7 +29,7 @@ export class MailService {
       });
     } catch (e) {
       console.log(e);
-      throw ApiException.serverError(ErrorMessages.MAIL_NOT_SEND);
+      throw ApiException.serverError(this.t.tException('mail_not_send'));
     }
   }
 
@@ -50,7 +51,7 @@ export class MailService {
     const subject = subjectMap[type];
 
     if (!url || !subject) {
-      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN_TYPE);
+      throw ApiException.badRequest(this.t.tException('invalid_token_type'));
     }
 
     await this.sendMail(

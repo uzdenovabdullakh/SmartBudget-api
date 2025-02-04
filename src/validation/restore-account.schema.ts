@@ -1,8 +1,11 @@
-import { z } from 'zod';
+import i18next from 'i18next';
+import { z } from 'src/utils/zod-map';
 
 export const RestoreAccountSchema = z
   .object({
-    token: z.string().min(1, { message: 'Token is required' }),
+    token: z
+      .string()
+      .min(1, i18next.t('validation.Token is required', { ns: 'common' })),
   })
   .required();
 

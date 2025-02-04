@@ -7,15 +7,13 @@
     </style>
   </head>
   <body>
-    <p class="headDiv">Welcome back to the board of SmartBudget!</p>
-    <p>Hello, {{userName}}!</p>
-    <p>Your data was saved.</p>
+    <p class="headDiv">{{t "email.header.restore_account"}}</p>
+    <p>{{t "email.greeting"}}, {{userName}}!</p>
     <p>
-      Please click on the following link, or paste this into your browser to
-      restore your account:</p>
+       {{t "email.instructions.restore_account"}}:</p>
     <p>
-      <a href="{{payload}}">Click here to restore</a>
+      <a href="{{payload}}">{{t "email.link.restore_account"}}</a>
     </p>
-    <p>Best Regards, SmartBudget,</p>
+    <p>{{t "email.signature"}}</p>
   </body>
 </html>

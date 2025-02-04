@@ -1,7 +1,7 @@
 import i18next from 'i18next';
 import { z } from 'src/utils/zod-map';
 
-export const ResetPasswordRequestSchema = z
+export const RestoreAccountRequestSchema = z
   .object({
     email: z
       .string()
@@ -9,6 +9,6 @@ export const ResetPasswordRequestSchema = z
   })
   .required();
 
-export type ResetPasswordRequestDto = z.infer<
-  typeof ResetPasswordRequestSchema
+export type RestoreAccountRequestDto = z.infer<
+  typeof RestoreAccountRequestSchema
 >;

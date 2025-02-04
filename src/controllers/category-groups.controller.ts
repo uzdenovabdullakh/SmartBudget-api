@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { CategoryGroupsService } from 'src/services/category-groups.service';
+import { TranslationService } from 'src/services/translation.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
   CreateCategoryGroupDto,
@@ -19,7 +20,10 @@ import {
 
 @Controller('category-groups')
 export class CategoryGroupsController {
-  constructor(private readonly categoryGroupsService: CategoryGroupsService) {}
+  constructor(
+    private readonly categoryGroupsService: CategoryGroupsService,
+    private readonly t: TranslationService,
+  ) {}
 
   @Post()
   @UsePipes(new ZodValidationPipe(CreateCategoryGroupSchema))
@@ -27,7 +31,7 @@ export class CategoryGroupsController {
     const data = await this.categoryGroupsService.createCategoryGroup(dto);
     return {
       data,
-      message: 'Category group was successfully created',
+      message: this.t.tMessage('created', 'category_group'),
     };
   }
 
@@ -51,7 +55,7 @@ export class CategoryGroupsController {
   ) {
     await this.categoryGroupsService.removeCategoryGroup(id, req.user);
     return {
-      message: 'Category was successfully removed',
+      message: this.t.tMessage('removed', 'category'),
     };
   }
 
@@ -62,7 +66,7 @@ export class CategoryGroupsController {
   ) {
     await this.categoryGroupsService.restoreCategoryGroup(id, req.user);
     return {
-      message: 'Category was successfully restored',
+      message: this.t.tMessage('restored', 'category'),
     };
   }
 }
