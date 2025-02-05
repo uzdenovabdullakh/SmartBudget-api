@@ -1,17 +1,16 @@
 import {
   EntitySubscriberInterface,
   EventSubscriber,
+  InsertEvent,
   UpdateEvent,
 } from 'typeorm';
 import { User } from 'src/entities/user.entity';
 import { Brief } from 'src/entities/brief.entity';
 import { Budget } from 'src/entities/budget.entity';
 import { BriefQuiz } from 'src/constants/constants';
-import { I18nContext, I18nService } from 'nestjs-i18n';
 
 @EventSubscriber()
 export class UserSubscriber implements EntitySubscriberInterface<User> {
-  constructor(private readonly i18n: I18nService) {}
   listenTo() {
     return User;
   }
@@ -28,14 +27,29 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
       });
       await manager.save(Brief, brief);
 
-      const lang = I18nContext.current().lang;
-      const tCaption = this.i18n.t(`entities.budget`, {
-        lang,
+      const budget = manager.create(Budget, {
+        user: entity,
+        name: `${entity.login} budget`,
       });
+      await manager.save(Budget, budget);
+    }
+  }
+
+  async afterInsert(event: InsertEvent<User>) {
+    const { entity, manager } = event;
+
+    if (entity.isActivated) {
+      const brief = manager.create(Brief, {
+        user: entity,
+        briefAnswers: Object.fromEntries(
+          Object.entries(BriefQuiz).map(([question]) => [question, []]),
+        ),
+      });
+      await manager.save(Brief, brief);
 
       const budget = manager.create(Budget, {
         user: entity,
-        name: `${entity.login} ${tCaption}`,
+        name: `${entity.login} budget`,
       });
       await manager.save(Budget, budget);
     }
