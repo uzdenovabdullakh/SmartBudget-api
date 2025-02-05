@@ -11,6 +11,7 @@ import { ErrorCodes, tokenLifeTime } from 'src/constants/constants';
 import { ChangePasswordDto } from 'src/validation/change-password.schema';
 import { parseDuration } from 'src/utils/helpers';
 import { TranslationService } from './translation.service';
+import { OauthDto } from 'src/validation/oauth.schema';
 
 @Injectable()
 export class AuthService {
@@ -193,5 +194,37 @@ export class AuthService {
     if (tokenEntity) {
       await this.tokenRepository.remove(tokenEntity);
     }
+  }
+
+  async oauth(dto: OauthDto) {
+    const { yandexId, email, login } = dto;
+
+    const userWithYandexId = await this.userRepository.findOne({
+      where: { yandexId },
+    });
+
+    if (userWithYandexId) {
+      return this.generateTokensToResponse(userWithYandexId);
+    }
+
+    const userWithEmail = await this.userRepository.findOne({
+      where: { email },
+    });
+
+    if (userWithEmail) {
+      throw ApiException.badRequest(
+        this.t.tException('already_exists', 'user'),
+      );
+    }
+
+    const user = this.userRepository.create({
+      email,
+      login,
+      yandexId,
+      isActivated: true,
+    });
+    await this.userRepository.save(user);
+
+    return this.generateTokensToResponse(user);
   }
 }
