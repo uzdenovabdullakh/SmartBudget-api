@@ -54,7 +54,7 @@ export class UsersService {
       email: user.email,
       settings: user.settings,
       isActivated: user.isActivated,
-      isBriefCompleted: user.brief.isCompleted,
+      isBriefCompleted: user?.brief?.isCompleted,
     };
   }
 

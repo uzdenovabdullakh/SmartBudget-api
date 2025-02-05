@@ -47,6 +47,7 @@ import {
   RestoreAccountSchema,
 } from 'src/validation/restore-account.schema';
 import { TranslationService } from 'src/services/translation.service';
+import { OauthDto, OauthSchema } from 'src/validation/oauth.schema';
 
 @Controller('auth')
 export class AuthController {
@@ -224,5 +225,12 @@ export class AuthController {
     await this.userService.restore(user.email);
 
     return { message: this.t.tMessage('restored', 'account') };
+  }
+
+  @Public()
+  @Post('oauth')
+  @UsePipes(new ZodValidationPipe(OauthSchema))
+  async oauth(@Body() dto: OauthDto) {
+    return await this.authService.oauth(dto);
   }
 }

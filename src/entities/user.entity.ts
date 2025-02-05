@@ -39,6 +39,14 @@ export class User extends Timestamps {
   })
   settings: object;
 
+  @Column({
+    nullable: true,
+    type: 'varchar',
+    length: 64,
+    name: 'yandex_id',
+  })
+  yandexId: string;
+
   @OneToMany(() => Token, (token) => token.user)
   tokens: Token[];
 
