@@ -6,7 +6,7 @@ import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { UserInfo } from 'src/types/user.types';
 import { CreateUserDto, UpdateUserDto } from 'src/validation/user.schema';
-import { IsNull, Not, Repository } from 'typeorm';
+import { Equal, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
@@ -77,12 +77,12 @@ export class UsersService {
     if (dto.email) {
       const existEmail = await this.userRepository.findOne({
         where: {
-          email: dto.email,
+          email: Equal(dto.email),
           id: Not(id),
         },
         withDeleted: true,
       });
-      if (!existEmail)
+      if (existEmail)
         throw ApiException.badRequest(
           this.t.tException('already_exists', 'user'),
         );

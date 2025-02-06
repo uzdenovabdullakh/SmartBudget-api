@@ -13,7 +13,7 @@ import {
   CreateCategoryDto,
   UpdateCategoryDto,
 } from 'src/validation/category.schema';
-import { In, Not, Repository } from 'typeorm';
+import { Equal, In, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class CategoriesService {
@@ -108,10 +108,10 @@ export class CategoriesService {
     const { name } = dto;
     const category = await this.getCategory(id, user);
 
-    const budgetExist = await this.categoryRepository.findOne({
+    const categoryExist = await this.categoryRepository.findOne({
       where: {
         id: Not(id),
-        name,
+        name: Equal(name),
         budget: {
           id: category.budget.id,
           user: {
@@ -121,7 +121,7 @@ export class CategoriesService {
       },
       withDeleted: true,
     });
-    if (budgetExist) {
+    if (categoryExist) {
       throw ApiException.notFound(
         this.t.tException('already_exists', 'category'),
       );

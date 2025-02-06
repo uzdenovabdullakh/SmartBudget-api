@@ -5,7 +5,7 @@ import { Budget } from 'src/entities/budget.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { CreateBudgetDto, UpdateBudgetDto } from 'src/validation/budget.schema';
-import { In, IsNull, Not, Repository } from 'typeorm';
+import { Equal, In, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class BudgetsService {
@@ -88,7 +88,7 @@ export class BudgetsService {
     const budgetExist = await this.budgetRepository.findOne({
       where: {
         id: Not(id),
-        name,
+        name: Equal(name),
         user: {
           id: user.id,
         },
