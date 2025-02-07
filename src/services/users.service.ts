@@ -41,7 +41,7 @@ export class UsersService {
   async findOne(id: string): Promise<UserInfo> {
     const user = await this.userRepository.findOne({
       where: { id },
-      select: ['id', 'login', 'email', 'settings', 'isActivated'],
+      select: ['id', 'login', 'email', 'settings', 'isActivated', 'yandexId'],
       relations: ['brief'],
     });
 
@@ -53,6 +53,7 @@ export class UsersService {
       login: user.login,
       email: user.email,
       settings: user.settings,
+      yandexId: user.yandexId,
       isActivated: user.isActivated,
       isBriefCompleted: user?.brief?.isCompleted,
     };
