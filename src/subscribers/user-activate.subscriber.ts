@@ -18,6 +18,10 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
   async afterUpdate(event: UpdateEvent<User>) {
     const { databaseEntity, entity, manager } = event;
 
+    if (!databaseEntity) {
+      return;
+    }
+
     if (databaseEntity.isActivated === false && entity.isActivated === true) {
       const brief = manager.create(Brief, {
         user: entity,
