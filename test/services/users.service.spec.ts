@@ -43,13 +43,14 @@ describe('UsersService', () => {
       settings: { theme: 'dark' },
       isActivated: true,
       brief: { isCompleted: true },
+      yandexId: '321',
     });
 
     const result = await service.findOne(userId);
 
     expect(mockUserRepository.findOne).toHaveBeenCalledWith({
       where: { id: userId },
-      select: ['id', 'login', 'email', 'settings', 'isActivated'],
+      select: ['id', 'login', 'email', 'settings', 'isActivated', 'yandexId'],
       relations: ['brief'],
     });
 
@@ -60,6 +61,7 @@ describe('UsersService', () => {
       settings: { theme: 'dark' },
       isActivated: true,
       isBriefCompleted: true,
+      yandexId: '321',
     });
   });
 });

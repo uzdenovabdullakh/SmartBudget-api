@@ -24,7 +24,7 @@ export class Bank extends Timestamps {
   @Column({ nullable: false, type: 'text' })
   refresh_token: string;
 
-  @OneToOne(() => Account, (account) => account.bank)
+  @OneToOne(() => Account, (account) => account.bank, { onDelete: 'CASCADE' })
   account: Account;
 
   constructor(name: string, access_token: string, refresh_token: string) {
