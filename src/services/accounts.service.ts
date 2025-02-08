@@ -12,6 +12,7 @@ import {
 import { CreateUnlinkedAccountDto } from 'src/validation/account.schema';
 import { PaginationQueryDto } from 'src/validation/pagination.schema';
 import { In, IsNull, Not, Repository } from 'typeorm';
+import { Bank } from 'src/entities/bank.entity';
 
 @Injectable()
 export class AccountsService {
@@ -20,6 +21,8 @@ export class AccountsService {
     private readonly accountRepository: Repository<Account>,
     @InjectRepository(UnlinkedAccount)
     private readonly unlinkedAccountRepository: Repository<UnlinkedAccount>,
+    @InjectRepository(Bank)
+    private readonly bankRepository: Repository<Bank>,
     private readonly t: TranslationService,
   ) {}
 
@@ -195,9 +198,26 @@ export class AccountsService {
   }
 
   async deleteAccount(id: string, user: User) {
-    await this.getUserAccount(id, user);
+    const account = await this.accountRepository.findOne({
+      where: {
+        id,
+        budget: {
+          user: {
+            id: user.id,
+          },
+        },
+      },
+      relations: ['unlinkedAccount', 'bank', 'budget', 'budget.user'],
+    });
 
-    await this.accountRepository.softDelete(id);
+    if (account.unlinkedAccount) {
+      await this.unlinkedAccountRepository.softRemove(account.unlinkedAccount);
+    }
+    if (account.bank) {
+      await this.bankRepository.softRemove(account.bank);
+    }
+
+    await this.accountRepository.softRemove(account);
   }
 
   async deleteForever(ids: string[], user: User) {
@@ -212,7 +232,7 @@ export class AccountsService {
         },
       },
       withDeleted: true,
-      relations: ['budget', 'budget.user'],
+      relations: ['unlinkedAccount', 'bank', 'budget', 'budget.user'],
     });
 
     const foundIds = accounts.map((account) => account.id);
@@ -221,7 +241,14 @@ export class AccountsService {
       throw ApiException.notFound(this.t.tException('not_found', 'account'));
     }
 
-    await this.accountRepository.delete(ids);
+    for (const account of accounts) {
+      if (account.bank) {
+        await this.bankRepository.delete(account.bank.id);
+      }
+      if (account.unlinkedAccount) {
+        await this.unlinkedAccountRepository.delete(account.unlinkedAccount.id);
+      }
+    }
   }
 
   async restoreAccounts(ids: string[], user: User) {
@@ -243,6 +270,17 @@ export class AccountsService {
     const notFoundIds = ids.filter((id) => !foundIds.includes(id));
     if (notFoundIds.length > 0) {
       throw ApiException.notFound(this.t.tException('not_found', 'account'));
+    }
+
+    for (const account of accounts) {
+      if (account.bank) {
+        await this.bankRepository.restore(account.bank.id);
+      }
+      if (account.unlinkedAccount) {
+        await this.unlinkedAccountRepository.restore(
+          account.unlinkedAccount.id,
+        );
+      }
     }
 
     await this.accountRepository.restore(ids);
