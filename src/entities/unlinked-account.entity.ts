@@ -18,7 +18,9 @@ export class UnlinkedAccount extends Timestamps {
   })
   amount: number;
 
-  @OneToOne(() => Account, (account) => account.bank)
+  @OneToOne(() => Account, (account) => account.unlinkedAccount, {
+    onDelete: 'CASCADE',
+  })
   account: Account;
 
   constructor(name: string, amount: number) {

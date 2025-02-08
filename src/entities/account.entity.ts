@@ -42,14 +42,22 @@ export class Account extends Timestamps {
   })
   budget: Budget;
 
-  @OneToOne(() => Bank, { onDelete: 'SET NULL', nullable: true })
+  @OneToOne(() => Bank, {
+    onDelete: 'CASCADE',
+    nullable: true,
+    cascade: ['remove'],
+  })
   @JoinColumn({
     name: 'bank_id',
     foreignKeyConstraintName: 'fk_account_to_bank',
   })
   bank: Bank;
 
-  @OneToOne(() => UnlinkedAccount, { onDelete: 'SET NULL', nullable: true })
+  @OneToOne(() => UnlinkedAccount, {
+    onDelete: 'CASCADE',
+    nullable: true,
+    cascade: ['remove'],
+  })
   @JoinColumn({
     name: 'unlinked_account_id',
     foreignKeyConstraintName: 'fk_account_to_unlinked_account',
