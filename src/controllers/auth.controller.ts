@@ -41,12 +41,13 @@ import {
 import {
   RestoreAccountRequestDto,
   RestoreAccountRequestSchema,
-} from 'src/validation/resrore-account-request.schema copy';
+} from 'src/validation/resrore-account-request.schema';
 import {
   RestoreAccountDto,
   RestoreAccountSchema,
 } from 'src/validation/restore-account.schema';
-import { ErrorMessages } from 'src/constants/constants';
+import { TranslationService } from 'src/services/translation.service';
+import { OauthDto, OauthSchema } from 'src/validation/oauth.schema';
 
 @Controller('auth')
 export class AuthController {
@@ -54,6 +55,7 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly mailService: MailService,
     private readonly userService: UsersService,
+    private readonly t: TranslationService,
   ) {}
 
   @Public()
@@ -104,12 +106,12 @@ export class AuthController {
     );
 
     if (!user) {
-      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
+      throw ApiException.badRequest(this.t.tException('invalid_token'));
     }
 
     await this.authService.activateUser(user, password);
 
-    return { message: 'Account confirmed successfully' };
+    return { message: this.t.tMessage('confirmed', 'account') };
   }
 
   @Public()
@@ -129,7 +131,7 @@ export class AuthController {
       userName: user.login,
     });
 
-    return { message: 'Password reset email sent' };
+    return { message: this.t.tMessage('email_sent', 'password_reset') };
   }
 
   @Public()
@@ -142,12 +144,12 @@ export class AuthController {
       TokensType.RESET_PASSWORD,
     );
     if (!user) {
-      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
+      throw ApiException.badRequest(this.t.tException('invalid_token'));
     }
 
     await this.authService.updatePassword(user, newPassword);
 
-    return { message: 'Password updated successfully' };
+    return { message: this.t.tMessage('updated', 'password') };
   }
 
   @Patch('change-password')
@@ -157,7 +159,7 @@ export class AuthController {
   ) {
     const user = req.user;
     await this.authService.changePassword(user, dto);
-    return { message: 'Password changed successfully' };
+    return { message: this.t.tMessage('updated', 'password') };
   }
 
   @Post('logout')
@@ -183,7 +185,7 @@ export class AuthController {
       userName: user.login,
     });
 
-    return { message: 'New email successfully sent' };
+    return { message: this.t.tMessage('email_sent', 'new') };
   }
 
   @Public()
@@ -203,7 +205,7 @@ export class AuthController {
       userName: user.login,
     });
 
-    return { message: 'Restore account email sent' };
+    return { message: this.t.tMessage('email_sent', 'restore_account') };
   }
 
   @Public()
@@ -217,11 +219,18 @@ export class AuthController {
       TokensType.RESTORE_ACCOUNT,
     );
     if (!user) {
-      throw ApiException.badRequest(ErrorMessages.INVALID_TOKEN);
+      throw ApiException.badRequest(this.t.tException('invalid_token'));
     }
 
     await this.userService.restore(user.email);
 
-    return { message: 'Account successfully restored' };
+    return { message: this.t.tMessage('restored', 'account') };
+  }
+
+  @Public()
+  @Post('oauth')
+  @UsePipes(new ZodValidationPipe(OauthSchema))
+  async oauth(@Body() dto: OauthDto) {
+    return await this.authService.oauth(dto);
   }
 }

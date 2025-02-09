@@ -1,5 +1,5 @@
 import { BriefQuiz } from 'src/constants/constants';
-import { z } from 'zod';
+import { z } from 'src/utils/zod-map';
 
 export const AnswerToBriefSchema = z.object(
   Object.fromEntries(

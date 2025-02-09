@@ -1,0 +1,14 @@
+{
+  "account": "Account",
+  "budget": "Budget",
+  "category_group": "Category group",
+  "user": "User",
+  "goal": "Goal",
+  "category": "Category",
+  "category_plural": "Categories",
+  "password_reset": "Password reset",
+  "password": "Password",
+  "new": "New",
+  "restore_account": "Restore account",
+  "category_limit": "Category limit"
+}

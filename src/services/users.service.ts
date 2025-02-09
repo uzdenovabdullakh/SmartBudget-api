@@ -1,16 +1,18 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ErrorCodes, ErrorMessages } from 'src/constants/constants';
+import { TranslationService } from './translation.service';
+import { ErrorCodes } from 'src/constants/constants';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { UserInfo } from 'src/types/user.types';
 import { CreateUserDto, UpdateUserDto } from 'src/validation/user.schema';
-import { IsNull, Not, Repository } from 'typeorm';
+import { Equal, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class UsersService {
   constructor(
     @InjectRepository(User) private userRepository: Repository<User>,
+    private readonly t: TranslationService,
   ) {}
 
   async create(dto: CreateUserDto): Promise<User> {
@@ -21,11 +23,13 @@ export class UsersService {
     if (findUser) {
       if (!findUser.isActivated) {
         throw ApiException.badRequest(
-          ErrorMessages.USER_IS_NOT_ACTIVATED,
+          this.t.tException('user_is_not_activated'),
           ErrorCodes.USER_NOT_ACTIVATED,
         );
       }
-      throw ApiException.badRequest(ErrorMessages.USER_ALREADY_EXISTS);
+      throw ApiException.badRequest(
+        this.t.tException('already_exists', 'user'),
+      );
     }
 
     const user = this.userRepository.create(dto);
@@ -37,19 +41,19 @@ export class UsersService {
   async findOne(id: string): Promise<UserInfo> {
     const user = await this.userRepository.findOne({
       where: { id },
-      select: ['id', 'login', 'email', 'settings', 'isActivated'],
+      select: ['id', 'login', 'email', 'yandexId'],
       relations: ['brief'],
     });
 
-    if (!user) throw ApiException.notFound(ErrorMessages.USER_NOT_FOUND);
+    if (!user)
+      throw ApiException.notFound(this.t.tException('not_found', 'user'));
 
     return {
       id: user.id,
       login: user.login,
       email: user.email,
-      settings: user.settings,
-      isActivated: user.isActivated,
-      isBriefCompleted: user.brief.isCompleted,
+      yandexId: user.yandexId,
+      isBriefCompleted: user?.brief?.isCompleted,
     };
   }
 
@@ -58,32 +62,32 @@ export class UsersService {
       where: {
         email,
       },
-      relations: ['budgets', 'tokens'],
+      relations: ['tokens'],
     });
-    if (!user) throw ApiException.notFound(ErrorMessages.USER_NOT_FOUND);
+    if (!user)
+      throw ApiException.notFound(this.t.tException('not_found', 'user'));
 
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<UserInfo> {
+  async update(id: string, dto: UpdateUserDto) {
     await this.findOne(id);
 
     if (dto.email) {
       const existEmail = await this.userRepository.findOne({
         where: {
-          email: dto.email,
+          email: Equal(dto.email),
           id: Not(id),
         },
         withDeleted: true,
       });
       if (existEmail)
-        throw ApiException.badRequest(ErrorMessages.USER_ALREADY_EXISTS);
+        throw ApiException.badRequest(
+          this.t.tException('already_exists', 'user'),
+        );
     }
 
     await this.userRepository.update({ id }, dto);
-
-    const userInfo = await this.findOne(id);
-    return userInfo;
   }
 
   async remove(id: string) {

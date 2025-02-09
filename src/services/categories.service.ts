@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { ErrorMessages } from 'src/constants/constants';
+import { TranslationService } from './translation.service';
 import { Budget } from 'src/entities/budget.entity';
 import { CategoryGroup } from 'src/entities/category-group.entity';
 import { CategorySpending } from 'src/entities/category-spending.entity';
@@ -13,7 +13,7 @@ import {
   CreateCategoryDto,
   UpdateCategoryDto,
 } from 'src/validation/category.schema';
-import { In, Not, Repository } from 'typeorm';
+import { Equal, In, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class CategoriesService {
@@ -26,6 +26,7 @@ export class CategoriesService {
     private readonly budgetRepository: Repository<Budget>,
     @InjectRepository(CategorySpending)
     private readonly categorySpendingRepository: Repository<CategorySpending>,
+    private readonly t: TranslationService,
   ) {}
 
   async createCategory(dto: CreateCategoryDto, user: User) {
@@ -36,7 +37,9 @@ export class CategoriesService {
     });
 
     if (!categoryGroup) {
-      throw ApiException.notFound(ErrorMessages.CATEGORY_GROUP_NOT_FOUND);
+      throw ApiException.notFound(
+        this.t.tException('not_found', 'category_group'),
+      );
     }
 
     const budget = await this.budgetRepository.findOne({
@@ -48,7 +51,7 @@ export class CategoriesService {
     });
 
     if (!budget) {
-      throw ApiException.notFound(ErrorMessages.BUDGET_NOT_FOUND);
+      throw ApiException.notFound(this.t.tException('not_found', 'budget'));
     }
 
     const existingCategory = await this.categoryRepository.findOne({
@@ -61,7 +64,9 @@ export class CategoriesService {
     });
 
     if (existingCategory) {
-      throw ApiException.conflictError(ErrorMessages.CATEGORY_ALREADY_EXISTS);
+      throw ApiException.conflictError(
+        this.t.tException('already_exists', 'category'),
+      );
     }
 
     const category = this.categoryRepository.create({
@@ -70,8 +75,7 @@ export class CategoriesService {
       budget: { id: budgetId },
     });
 
-    const newCategory = await this.categoryRepository.save(category);
-    return await this.getCategory(newCategory.id, user);
+    await this.categoryRepository.save(category);
   }
 
   async getCategory(id: string, user: User) {
@@ -93,7 +97,7 @@ export class CategoriesService {
       relations: ['categorySpending', 'goal', 'group'],
     });
     if (!category) {
-      throw ApiException.notFound(ErrorMessages.CATEGORY_NOT_FOUND);
+      throw ApiException.notFound(this.t.tException('not_found', 'category'));
     }
 
     return category;
@@ -103,10 +107,10 @@ export class CategoriesService {
     const { name } = dto;
     const category = await this.getCategory(id, user);
 
-    const budgetExist = await this.categoryRepository.findOne({
+    const categoryExist = await this.categoryRepository.findOne({
       where: {
         id: Not(id),
-        name,
+        name: Equal(name),
         budget: {
           id: category.budget.id,
           user: {
@@ -116,8 +120,10 @@ export class CategoriesService {
       },
       withDeleted: true,
     });
-    if (budgetExist) {
-      throw ApiException.conflictError(ErrorMessages.CATEGORY_ALREADY_EXISTS);
+    if (categoryExist) {
+      throw ApiException.notFound(
+        this.t.tException('already_exists', 'category'),
+      );
     }
 
     await this.categoryRepository.update(
@@ -128,7 +134,6 @@ export class CategoriesService {
         name,
       },
     );
-    return await this.getCategory(id, user);
   }
 
   async removeCategory(id: string, user: User) {
@@ -138,43 +143,51 @@ export class CategoriesService {
   }
 
   async deleteForever(ids: string[], user: User) {
-    const categories = await this.categoryRepository.find({
-      where: {
-        id: In(ids),
-        budget: {
-          user: { id: user.id },
+    await this.categoryRepository.manager.transaction(async (manager) => {
+      const categoryRepository = manager.getRepository(Category);
+
+      const categories = await categoryRepository.find({
+        where: {
+          id: In(ids),
+          budget: {
+            user: { id: user.id },
+          },
         },
-      },
-      withDeleted: true,
+        withDeleted: true,
+      });
+
+      const foundIds = categories.map((category) => category.id);
+      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
+      if (notFoundIds.length > 0) {
+        throw ApiException.notFound(this.t.tException('not_found', 'category'));
+      }
+
+      await categoryRepository.delete(ids);
     });
-
-    const foundIds = categories.map((category) => category.id);
-    const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-    if (notFoundIds.length > 0) {
-      throw ApiException.notFound(ErrorMessages.CATEGORY_NOT_FOUND);
-    }
-
-    await this.categoryRepository.delete(ids);
   }
 
   async restoreCategories(ids: string[], user: User) {
-    const categories = await this.categoryRepository.find({
-      where: {
-        id: In(ids),
-        budget: {
-          user: { id: user.id },
+    await this.categoryRepository.manager.transaction(async (manager) => {
+      const categoryRepository = manager.getRepository(Category);
+
+      const categories = await categoryRepository.find({
+        where: {
+          id: In(ids),
+          budget: {
+            user: { id: user.id },
+          },
         },
-      },
-      withDeleted: true,
+        withDeleted: true,
+      });
+
+      const foundIds = categories.map((category) => category.id);
+      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
+      if (notFoundIds.length > 0) {
+        throw ApiException.notFound(this.t.tException('not_found', 'category'));
+      }
+
+      await categoryRepository.restore(ids);
     });
-
-    const foundIds = categories.map((category) => category.id);
-    const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-    if (notFoundIds.length > 0) {
-      throw ApiException.notFound(ErrorMessages.CATEGORY_NOT_FOUND);
-    }
-
-    await this.categoryRepository.restore(ids);
   }
 
   async setCategoryLimit(id: string, dto: CategoryLimitDto, user: User) {
@@ -193,6 +206,5 @@ export class CategoriesService {
     });
 
     await this.categorySpendingRepository.save(categorySpending);
-    return await this.getCategory(id, user);
   }
 }

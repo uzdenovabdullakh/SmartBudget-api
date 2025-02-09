@@ -7,13 +7,11 @@ import { JwtTokenService } from './jwt.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { BcryptService } from './bcrypt.service';
 import { ApiException } from 'src/exceptions/api.exception';
-import {
-  ErrorCodes,
-  ErrorMessages,
-  tokenLifeTime,
-} from 'src/constants/constants';
+import { ErrorCodes, tokenLifeTime } from 'src/constants/constants';
 import { ChangePasswordDto } from 'src/validation/change-password.schema';
 import { parseDuration } from 'src/utils/helpers';
+import { TranslationService } from './translation.service';
+import { OauthDto } from 'src/validation/oauth.schema';
 
 @Injectable()
 export class AuthService {
@@ -24,6 +22,7 @@ export class AuthService {
     private readonly tokenRepository: Repository<Token>,
     private readonly jwtService: JwtTokenService,
     private readonly bcryptService: BcryptService,
+    private readonly t: TranslationService,
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
@@ -46,7 +45,7 @@ export class AuthService {
 
     if (user.deletedAt) {
       throw ApiException.conflictError(
-        ErrorMessages.USER_IS_DELETED,
+        this.t.tException('user_is_deleted'),
         ErrorCodes.USER_DELETED,
       );
     }
@@ -66,32 +65,36 @@ export class AuthService {
   }
 
   async createToken(user: User, tokenType: TokensType): Promise<string> {
-    const { id, email, login, isActivated } = user;
-    const token = await this.jwtService.generateToken(
-      { id, email, login, isActivated },
-      tokenLifeTime[tokenType],
-    );
+    return await this.tokenRepository.manager.transaction(async (manager) => {
+      const tokenRepository = manager.getRepository(Token);
 
-    const expirationDuration = parseDuration(tokenLifeTime[tokenType]);
-    const expirationTime = new Date(Date.now() + expirationDuration);
+      const { id, email, login, isActivated } = user;
+      const token = await this.jwtService.generateToken(
+        { id, email, login, isActivated },
+        tokenLifeTime[tokenType],
+      );
 
-    const tokenEntity = new Token(user, token, tokenType, expirationTime);
+      const expirationDuration = parseDuration(tokenLifeTime[tokenType]);
+      const expirationTime = new Date(Date.now() + expirationDuration);
 
-    if (tokenType == TokensType.REFRESH_TOKEN) {
-      const userTokens = await this.tokenRepository.find({
-        where: { user: { id: user.id }, tokenType: TokensType.REFRESH_TOKEN },
-        relations: ['user'],
-      });
+      const tokenEntity = new Token(user, token, tokenType, expirationTime);
 
-      if (userTokens.length >= 3) {
-        await this.tokenRepository.remove(
-          userTokens.slice(0, userTokens.length - 2),
-        );
+      if (tokenType == TokensType.REFRESH_TOKEN) {
+        const userTokens = await tokenRepository.find({
+          where: { user: { id: user.id }, tokenType: TokensType.REFRESH_TOKEN },
+          relations: ['user'],
+        });
+
+        if (userTokens.length >= 3) {
+          await tokenRepository.remove(
+            userTokens.slice(0, userTokens.length - 2),
+          );
+        }
       }
-    }
-    await this.tokenRepository.save(tokenEntity);
+      await tokenRepository.save(tokenEntity);
 
-    return token;
+      return token;
+    });
   }
 
   async validateAndCreateToken(user: User, type: TokensType): Promise<string> {
@@ -101,7 +104,7 @@ export class AuthService {
 
     if (tokenCount > 3) {
       throw ApiException.badRequest(
-        ErrorMessages.TOO_MANY_REQUESTS,
+        this.t.tException('too_many_requests'),
         ErrorCodes.TOO_MANY_REQUESTS,
       );
     }
@@ -116,13 +119,17 @@ export class AuthService {
     });
 
     if (!tokenEntity) {
-      throw ApiException.unauthorized(ErrorMessages.INVALID_REFRESH_TOKEN);
+      throw ApiException.unauthorized(
+        this.t.tException('invalid_refresh_token'),
+      );
     }
 
     const isValid = await this.jwtService.validateToken(refreshToken);
     if (!isValid) {
       await this.tokenRepository.delete(tokenEntity);
-      throw ApiException.unauthorized(ErrorMessages.INVALID_REFRESH_TOKEN);
+      throw ApiException.unauthorized(
+        this.t.tException('invalid_refresh_token'),
+      );
     }
 
     return await this.generateTokensToResponse(tokenEntity.user);
@@ -146,23 +153,33 @@ export class AuthService {
   }
 
   async activateUser(user: User, password: string): Promise<void> {
-    user.password = await this.bcryptService.hash(password);
-    user.isActivated = true;
-    await this.userRepository.save(user);
+    await this.userRepository.manager.transaction(async (manager) => {
+      const userRepository = manager.getRepository(User);
+      const tokenRepository = manager.getRepository(Token);
 
-    await this.tokenRepository.delete({
-      user,
-      tokenType: TokensType.ACTIVATE_ACCOUNT,
+      user.password = await this.bcryptService.hash(password);
+      user.isActivated = true;
+      await userRepository.save(user);
+
+      await tokenRepository.delete({
+        user,
+        tokenType: TokensType.ACTIVATE_ACCOUNT,
+      });
     });
   }
 
   async updatePassword(user: User, newPassword: string): Promise<void> {
-    user.password = await this.bcryptService.hash(newPassword);
-    await this.userRepository.save(user);
+    await this.userRepository.manager.transaction(async (manager) => {
+      const userRepository = manager.getRepository(User);
+      const tokenRepository = manager.getRepository(Token);
 
-    await this.tokenRepository.delete({
-      user,
-      tokenType: TokensType.RESET_PASSWORD,
+      user.password = await this.bcryptService.hash(newPassword);
+      await userRepository.save(user);
+
+      await tokenRepository.delete({
+        user,
+        tokenType: TokensType.RESET_PASSWORD,
+      });
     });
   }
 
@@ -174,7 +191,9 @@ export class AuthService {
       user.password,
     );
     if (!isMatch) {
-      throw ApiException.badRequest(ErrorMessages.PASSWORD_DID_NOT_MATCH);
+      throw ApiException.badRequest(
+        this.t.tException('password_did_not_match'),
+      );
     }
 
     await this.updatePassword(user, newPassword);
@@ -189,5 +208,37 @@ export class AuthService {
     if (tokenEntity) {
       await this.tokenRepository.remove(tokenEntity);
     }
+  }
+
+  async oauth(dto: OauthDto) {
+    const { yandexId, email, login } = dto;
+
+    const userWithYandexId = await this.userRepository.findOne({
+      where: { yandexId },
+    });
+
+    if (userWithYandexId) {
+      return this.generateTokensToResponse(userWithYandexId);
+    }
+
+    const userWithEmail = await this.userRepository.findOne({
+      where: { email },
+    });
+
+    if (userWithEmail) {
+      throw ApiException.badRequest(
+        this.t.tException('already_exists', 'user'),
+      );
+    }
+
+    const user = this.userRepository.create({
+      email,
+      login,
+      yandexId,
+      isActivated: true,
+    });
+    await this.userRepository.save(user);
+
+    return this.generateTokensToResponse(user);
   }
 }

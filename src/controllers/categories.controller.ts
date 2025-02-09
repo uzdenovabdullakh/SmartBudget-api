@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { CategoriesService } from 'src/services/categories.service';
+import { TranslationService } from 'src/services/translation.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
 import {
@@ -25,7 +26,10 @@ import {
 
 @Controller('categories')
 export class CategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) {}
+  constructor(
+    private readonly categoriesService: CategoriesService,
+    private readonly t: TranslationService,
+  ) {}
 
   @Post()
   @UsePipes(new ZodValidationPipe(CreateCategorySchema))
@@ -33,10 +37,9 @@ export class CategoriesController {
     @Body() dto: CreateCategoryDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.categoriesService.createCategory(dto, req.user);
+    await this.categoriesService.createCategory(dto, req.user);
     return {
-      data,
-      message: 'Category  was successfully created',
+      message: this.t.tMessage('created', 'category'),
     };
   }
 
@@ -54,10 +57,9 @@ export class CategoriesController {
     @Body(new ZodValidationPipe(UpdateCategorySchema)) dto: UpdateCategoryDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.categoriesService.updateCategory(id, dto, req.user);
+    await this.categoriesService.updateCategory(id, dto, req.user);
     return {
-      data,
-      message: 'Budget was successfully updated',
+      message: this.t.tMessage('updated', 'category'),
     };
   }
 
@@ -68,7 +70,7 @@ export class CategoriesController {
   ) {
     await this.categoriesService.removeCategory(id, req.user);
     return {
-      message: 'Category was successfully removed',
+      message: this.t.tMessage('removed', 'category'),
     };
   }
 
@@ -80,7 +82,7 @@ export class CategoriesController {
   ) {
     await this.categoriesService.deleteForever(dto, req.user);
     return {
-      message: 'Categories was successfully removed',
+      message: this.t.tMessage('removed_plural', 'category_plural'),
     };
   }
 
@@ -92,7 +94,7 @@ export class CategoriesController {
   ) {
     await this.categoriesService.restoreCategories(dto, req.user);
     return {
-      message: 'Categories was successfully restored',
+      message: this.t.tMessage('restored_plural', 'category_plural'),
     };
   }
 
@@ -102,14 +104,9 @@ export class CategoriesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body(new ZodValidationPipe(CategoryLimitSchema)) dto: CategoryLimitDto,
   ) {
-    const data = await this.categoriesService.setCategoryLimit(
-      id,
-      dto,
-      req.user,
-    );
+    await this.categoriesService.setCategoryLimit(id, dto, req.user);
     return {
-      data,
-      message: 'Category limit successfully added',
+      message: this.t.tMessage('created', 'category_limit'),
     };
   }
 }

@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { WinstonModule } from 'nest-winston';
 import { instance } from './logger/winston.logger';
-import { HttpExceptionFilter } from './exceptions/exception.filter';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
@@ -13,7 +12,6 @@ async function bootstrap() {
     }),
   });
   app.enableCors();
-  app.useGlobalFilters(new HttpExceptionFilter());
 
   const configService = app.get(ConfigService);
   const PORT = configService.get('PORT') || 5000;

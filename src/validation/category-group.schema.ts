@@ -1,8 +1,12 @@
-import { z } from 'zod';
+import i18next from 'i18next';
+import { z } from 'src/utils/zod-map';
 
 export const CreateCategoryGroupSchema = z
   .object({
-    name: z.string().max(128, 'Name is too long').min(1, 'Name is required'),
+    name: z
+      .string()
+      .max(128, i18next.t('validation.Name too long', { ns: 'common' }))
+      .min(1, i18next.t('validation.Name is required', { ns: 'common' })),
   })
   .required();
 

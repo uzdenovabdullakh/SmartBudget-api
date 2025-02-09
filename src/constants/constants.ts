@@ -98,32 +98,8 @@ export const BriefQuiz: BriefQuizType = {
   },
 };
 
-export const ErrorMessages = {
-  INVALID_TOKEN: 'Invalid or expired token',
-  USER_NOT_FOUND: 'User does not exists',
-  BUDGET_ALREADY_EXISTS: 'Budget already exists',
-  USER_ALREADY_EXISTS: 'User already exists',
-  USER_IS_NOT_ACTIVATED: 'User is not activated. Resend activation email',
-  INVALID_DURATION: 'Invalid duration format',
-  INVALID_CREADENTIALS: 'Invalid credentials',
-  INVALID_TOKEN_TYPE: 'Invalid token type',
-  MAIL_NOT_SEND: 'Mail does not send',
-  GOAL_NOT_FOUND: 'Goal does not exists',
-  CATEGORY_NOT_FOUND: 'Category does not exists',
-  CATEGORY_ALREADY_EXISTS: 'Category already exist',
-  BUDGET_NOT_FOUND: 'Budget does not exists',
-  CATEGORY_GROUP_NOT_FOUND: 'Category group does not exists',
-  CATEGORY_GROUP_ALREADY_EXISTS: 'Category group already exists',
-  ACCOUNT_NOT_FOUND: 'Account does not exists',
-  ACCOUNT_ALREADY_EXISTS: 'Account already exists',
-  PASSWORD_DID_NOT_MATCH: 'Current password is incorrect',
-  TOO_MANY_REQUESTS:
-    'Too many requests for this action. Please check your email',
-  USER_IS_DELETED: 'User is deleted. Please restore your account',
-  INVALID_REFRESH_TOKEN: 'Invalid or expired refresh token',
-};
-
 export const ErrorCodes = {
+  UNAUTHORIZED: 'UNAUTHORIZED',
   USER_DELETED: 'USER_DELETED',
   USER_NOT_ACTIVATED: 'USER_NOT_ACTIVATED',
   TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',

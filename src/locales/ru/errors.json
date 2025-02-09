@@ -1,0 +1,30 @@
+{
+  "invalid_token": "Недействительный или просроченный токен",
+  "not_found": "{entity} не существует",
+  "already_exists": "{entity} уже существует",
+  "user_is_not_activated": "Пользователь не активирован. Повторно отправьте письмо активации",
+  "invalid_credentials": "Неверные учетные данные",
+  "invalid_token_type": "Неверный тип токена",
+  "mail_not_send": "Письмо не было отправлено",
+  "password_did_not_match": "Текущий пароль неверный",
+  "too_many_requests": "Слишком много запросов для этого действия. Пожалуйста, проверьте свою почту",
+  "user_is_deleted": "Пользователь удален. Пожалуйста, восстановите свою учетную запись",
+  "invalid_refresh_token": "Недействительный или просроченный токен обновления",
+  "validation": {
+    "Name too long": "Название слишком длинное",
+    "Name is required": "Название обязательный параметр",
+    "Token is required": "Токен обязательный параметр",
+    "Invalid uuid": "Неверный uuid",
+    "Either budgetId or categoryId must be provided.": "Either budgetId or categoryId must be provided.",
+    "Invalid email address": "Неверная электронная почта",
+    "Color 'Red' is not allowed": "Цвет 'Красный' не разрешен",
+    "Password must be at least 8 characters long": "Пароль должен содержать не менее 8 символов",
+    "Password must be less than 32 characters long": "Пароль должен содержать не более 32 символов",
+    "Password must contain at least one uppercase letter": "Пароль должен содержать хотя бы одну заглавную букву",
+    "Password must contain at least one lowercase letter": "Пароль должен содержать хотя бы одну строчную букву",
+    "Password must contain at least one number": "Пароль должен содержать хотя бы одну цифру",
+    "Password must contain at least one special character": "Пароль должен содержать хотя бы один специальный символ",
+    "Array must contain at least one UUID": "Массив должен содержать хотя бы один UUID",
+    "Array must not contain more than 10 UUIDs": "Массив не должен содержать более 10 UUIDs"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "created": "{entity} успешно создан",
+  "updated": "{entity} успешно обновлен",
+  "removed": "{entity} успешно удален",
+  "removed_plural": "{entity} успешно удалены",
+  "restored": "{entity} успешно восстановлен",
+  "restored_plural": "{entity} успешно восстановлены",
+  "confirmed": "{entity} успешно подтвержден",
+  "email_sent": "Письмо {entity} отправлено"
+}

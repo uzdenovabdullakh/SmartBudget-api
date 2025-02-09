@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { GoalsService } from 'src/services/goals.service';
+import { TranslationService } from 'src/services/translation.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
   CreateGoalDto,
@@ -21,7 +22,10 @@ import {
 
 @Controller('goals')
 export class GoalsController {
-  constructor(private readonly goalsService: GoalsService) {}
+  constructor(
+    private readonly goalsService: GoalsService,
+    private readonly t: TranslationService,
+  ) {}
 
   @Post()
   @UsePipes(new ZodValidationPipe(CreateGoalSchema))
@@ -29,10 +33,9 @@ export class GoalsController {
     @Body() dto: CreateGoalDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.goalsService.createGoal(dto, req.user);
+    await this.goalsService.createGoal(dto, req.user);
     return {
-      data,
-      message: 'Goal  was successfully created',
+      message: this.t.tMessage('created', 'goal'),
     };
   }
 
@@ -42,10 +45,9 @@ export class GoalsController {
     @Body(new ZodValidationPipe(UpdateGoalSchema)) dto: UpdateGoalDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.goalsService.updateGoal(id, dto, req.user);
+    await this.goalsService.updateGoal(id, dto, req.user);
     return {
-      data,
-      message: 'Goal was successfully updated',
+      message: this.t.tMessage('updated', 'goal'),
     };
   }
 
@@ -56,7 +58,7 @@ export class GoalsController {
   ) {
     await this.goalsService.removeGoal(id, req.user);
     return {
-      message: 'Goal was successfully removed',
+      message: this.t.tMessage('removed', 'goal'),
     };
   }
 }
