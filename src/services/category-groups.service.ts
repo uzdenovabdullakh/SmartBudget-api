@@ -31,8 +31,6 @@ export class CategoryGroupsService {
 
     const createNewCategoryGroup = this.categoryGroupRepository.create(dto);
     await this.categoryGroupRepository.save(createNewCategoryGroup);
-
-    return createNewCategoryGroup;
   }
 
   async getCategoriesGroups(id: string, user: User) {
