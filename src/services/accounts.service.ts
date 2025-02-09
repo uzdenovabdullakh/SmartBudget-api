@@ -162,9 +162,8 @@ export class AccountsService {
           ELSE
             CONCAT(a.amount, b.settings ->> 'currency') END
           AS amount`,
-        'a.created_at AS "createdAt"',
       ])
-      .getRawOne<AccountDetails>();
+      .getRawOne<Omit<AccountDetails, 'createdAt'>>();
 
     if (!account) {
       throw ApiException.notFound(this.t.tException('not_found', 'account'));
@@ -287,6 +286,5 @@ export class AccountsService {
       },
       { name },
     );
-    return await this.getUserAccount(id, user);
   }
 }

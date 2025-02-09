@@ -42,7 +42,7 @@ export class AccountsController {
   ) {
     await this.accountService.createAccount(dto, req.user);
     return {
-      message: this.t.tMessage('created', 'unlinked_account'),
+      message: this.t.tMessage('created', 'account'),
     };
   }
 
@@ -114,9 +114,8 @@ export class AccountsController {
     @Req() req: AuthenticationRequest,
     @Body(new ZodValidationPipe(UpdateAccountSchema)) dto: UpdateAccountDto,
   ) {
-    const data = await this.accountService.updateAccount(id, dto, req.user);
+    await this.accountService.updateAccount(id, dto, req.user);
     return {
-      data,
       message: this.t.tMessage('updated', 'account'),
     };
   }
