@@ -9,14 +9,17 @@ import {
   UsePipes,
   ParseUUIDPipe,
   Query,
+  Patch,
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { AccountsService } from 'src/services/accounts.service';
 import { TranslationService } from 'src/services/translation.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
-  CreateUnlinkedAccountDto,
-  CreateUnlinkedAccountSchema,
+  CreateAccountDto,
+  CreateAccountSchema,
+  UpdateAccountDto,
+  UpdateAccountSchema,
 } from 'src/validation/account.schema';
 import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
 import {
@@ -32,12 +35,12 @@ export class AccountsController {
   ) {}
 
   @Post('unlinked-account')
-  @UsePipes(new ZodValidationPipe(CreateUnlinkedAccountSchema))
-  async createUnlinkedAccount(
-    @Body() dto: CreateUnlinkedAccountDto,
+  @UsePipes(new ZodValidationPipe(CreateAccountSchema))
+  async createAccount(
+    @Body() dto: CreateAccountDto,
     @Req() req: AuthenticationRequest,
   ) {
-    await this.accountService.createUnlinkedAccount(dto, req.user);
+    await this.accountService.createAccount(dto, req.user);
     return {
       message: this.t.tMessage('created', 'unlinked_account'),
     };
@@ -102,6 +105,19 @@ export class AccountsController {
     await this.accountService.restoreAccounts(dto, req.user);
     return {
       message: this.t.tMessage('restored_plural', 'account'),
+    };
+  }
+
+  @Patch(':id')
+  async updateAccount(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticationRequest,
+    @Body(new ZodValidationPipe(UpdateAccountSchema)) dto: UpdateAccountDto,
+  ) {
+    const data = await this.accountService.updateAccount(id, dto, req.user);
+    return {
+      data,
+      message: this.t.tMessage('updated', 'account'),
     };
   }
 }
