@@ -12,54 +12,54 @@ import {
 import { CreateUnlinkedAccountDto } from 'src/validation/account.schema';
 import { PaginationQueryDto } from 'src/validation/pagination.schema';
 import { In, IsNull, Not, Repository } from 'typeorm';
-import { Bank } from 'src/entities/bank.entity';
 
 @Injectable()
 export class AccountsService {
   constructor(
     @InjectRepository(Account)
     private readonly accountRepository: Repository<Account>,
-    @InjectRepository(UnlinkedAccount)
-    private readonly unlinkedAccountRepository: Repository<UnlinkedAccount>,
-    @InjectRepository(Bank)
-    private readonly bankRepository: Repository<Bank>,
     private readonly t: TranslationService,
   ) {}
 
   async createUnlinkedAccount(data: CreateUnlinkedAccountDto, user: User) {
-    const accountExist = await this.unlinkedAccountRepository.findOne({
-      where: {
-        name: data.name,
-        account: {
-          budget: {
-            user: {
-              id: user.id,
+    return await this.accountRepository.manager.transaction(async (manager) => {
+      const unlinkedAccountRepository = manager.getRepository(UnlinkedAccount);
+      const accountRepository = manager.getRepository(Account);
+
+      const accountExist = await unlinkedAccountRepository.findOne({
+        where: {
+          name: data.name,
+          account: {
+            budget: {
+              user: {
+                id: user.id,
+              },
             },
           },
         },
-      },
-      withDeleted: true,
+        withDeleted: true,
+      });
+
+      if (accountExist) {
+        throw ApiException.badRequest(
+          this.t.tException('already_exists', 'account'),
+        );
+      }
+
+      const unlinkedAccount = unlinkedAccountRepository.create(data);
+      const newUnlinkedAccount =
+        await unlinkedAccountRepository.save(unlinkedAccount);
+
+      const newAccount = accountRepository.create({
+        budget: {
+          id: data.budgetId,
+        },
+        unlinkedAccount: newUnlinkedAccount,
+        type: data.type,
+      });
+
+      await accountRepository.save(newAccount);
     });
-    if (accountExist) {
-      throw ApiException.badRequest(
-        this.t.tException('already_exists', 'account'),
-      );
-    }
-
-    const unlinkedAccount = this.unlinkedAccountRepository.create(data);
-    const newUnlinkedAccount =
-      await this.unlinkedAccountRepository.save(unlinkedAccount);
-
-    const newAccount = this.accountRepository.create({
-      budget: {
-        id: data.budgetId,
-      },
-      unlinkedAccount: newUnlinkedAccount,
-      type: data.type,
-    });
-    const account = await this.accountRepository.save(newAccount);
-
-    return await this.getUserAccount(account.id, user);
   }
 
   async getUserAccounts({
@@ -207,82 +207,69 @@ export class AccountsService {
           },
         },
       },
-      relations: ['unlinkedAccount', 'bank', 'budget', 'budget.user'],
+      relations: ['budget', 'budget.user'],
     });
 
-    if (account.unlinkedAccount) {
-      await this.unlinkedAccountRepository.softRemove(account.unlinkedAccount);
-    }
-    if (account.bank) {
-      await this.bankRepository.softRemove(account.bank);
+    if (!account) {
+      throw ApiException.notFound(this.t.tException('not_found', 'account'));
     }
 
     await this.accountRepository.softRemove(account);
   }
 
   async deleteForever(ids: string[], user: User) {
-    const accounts = await this.accountRepository.find({
-      where: {
-        id: In(ids),
-        deletedAt: Not(IsNull()),
-        budget: {
-          user: {
-            id: user.id,
+    await this.accountRepository.manager.transaction(async (manager) => {
+      const accountRepository = manager.getRepository(Account);
+
+      const accounts = await accountRepository.find({
+        where: {
+          id: In(ids),
+          deletedAt: Not(IsNull()),
+          budget: {
+            user: {
+              id: user.id,
+            },
           },
         },
-      },
-      withDeleted: true,
-      relations: ['unlinkedAccount', 'bank', 'budget', 'budget.user'],
+        withDeleted: true,
+        relations: ['unlinkedAccount', 'bank', 'budget', 'budget.user'],
+      });
+
+      const foundIds = accounts.map((account) => account.id);
+      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
+      if (notFoundIds.length > 0) {
+        throw ApiException.notFound(this.t.tException('not_found', 'account'));
+      }
+
+      await accountRepository.remove(accounts);
     });
-
-    const foundIds = accounts.map((account) => account.id);
-    const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-    if (notFoundIds.length > 0) {
-      throw ApiException.notFound(this.t.tException('not_found', 'account'));
-    }
-
-    for (const account of accounts) {
-      if (account.bank) {
-        await this.bankRepository.delete(account.bank.id);
-      }
-      if (account.unlinkedAccount) {
-        await this.unlinkedAccountRepository.delete(account.unlinkedAccount.id);
-      }
-    }
   }
 
   async restoreAccounts(ids: string[], user: User) {
-    const accounts = await this.accountRepository.find({
-      where: {
-        id: In(ids),
-        deletedAt: Not(IsNull()),
-        budget: {
-          user: {
-            id: user.id,
+    await this.accountRepository.manager.transaction(async (manager) => {
+      const accountRepository = manager.getRepository(Account);
+
+      const accounts = await accountRepository.find({
+        where: {
+          id: In(ids),
+          deletedAt: Not(IsNull()),
+          budget: {
+            user: {
+              id: user.id,
+            },
           },
         },
-      },
-      withDeleted: true,
-      relations: ['budget', 'budget.user'],
+        withDeleted: true,
+        relations: ['unlinkedAccount', 'bank', 'budget', 'budget.user'],
+      });
+
+      const foundIds = accounts.map((account) => account.id);
+      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
+      if (notFoundIds.length > 0) {
+        throw ApiException.notFound(this.t.tException('not_found', 'account'));
+      }
+
+      await accountRepository.recover(accounts);
     });
-
-    const foundIds = accounts.map((account) => account.id);
-    const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-    if (notFoundIds.length > 0) {
-      throw ApiException.notFound(this.t.tException('not_found', 'account'));
-    }
-
-    for (const account of accounts) {
-      if (account.bank) {
-        await this.bankRepository.restore(account.bank.id);
-      }
-      if (account.unlinkedAccount) {
-        await this.unlinkedAccountRepository.restore(
-          account.unlinkedAccount.id,
-        );
-      }
-    }
-
-    await this.accountRepository.restore(ids);
   }
 }
