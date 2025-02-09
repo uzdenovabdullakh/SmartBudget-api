@@ -14,57 +14,60 @@ export class GoalsService {
   constructor(
     @InjectRepository(Goal)
     private readonly goalRepository: Repository<Goal>,
-    @InjectRepository(Budget)
-    private readonly budgetRepository: Repository<Budget>,
-    @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>,
     private readonly t: TranslationService,
   ) {}
 
   async createGoal(dto: CreateGoalDto, user: User) {
-    const { budgetId, categoryId } = dto;
+    await this.goalRepository.manager.transaction(async (manager) => {
+      const goalRepository = manager.getRepository(Goal);
+      const budgetRepository = manager.getRepository(Budget);
+      const categoryRepository = manager.getRepository(Category);
 
-    const goal = this.goalRepository.create(dto);
+      const { budgetId, categoryId } = dto;
 
-    if (budgetId) {
-      const budget = await this.budgetRepository.findOne({
-        where: {
-          id: budgetId,
-          user: { id: user.id },
-        },
-        relations: ['user'],
-      });
+      const goal = goalRepository.create(dto);
 
-      if (!budget) {
-        throw ApiException.notFound(this.t.tException('not_found', 'budget'));
+      if (budgetId) {
+        const budget = await budgetRepository.findOne({
+          where: {
+            id: budgetId,
+            user: { id: user.id },
+          },
+          relations: ['user'],
+        });
+
+        if (!budget) {
+          throw ApiException.notFound(this.t.tException('not_found', 'budget'));
+        }
+
+        goal.budget = budget;
       }
 
-      goal.budget = budget;
-    }
-
-    if (categoryId) {
-      const category = await this.categoryRepository.findOne({
-        where: {
-          id: categoryId,
-          budget: {
-            user: {
-              id: user.id,
+      if (categoryId) {
+        const category = await categoryRepository.findOne({
+          where: {
+            id: categoryId,
+            budget: {
+              user: {
+                id: user.id,
+              },
             },
           },
-        },
-        relations: ['user'],
-      });
+          relations: ['user'],
+        });
 
-      if (!category) {
-        throw ApiException.notFound(this.t.tException('not_found', 'category'));
+        if (!category) {
+          throw ApiException.notFound(
+            this.t.tException('not_found', 'category'),
+          );
+        }
+
+        category.goal = goal;
+        await categoryRepository.save(category);
       }
 
-      category.goal = goal;
-      await this.categoryRepository.save(category);
-    }
-
-    const newGoal = await this.goalRepository.save(goal);
-    return await this.getGoal(newGoal.id, user);
+      await goalRepository.save(goal);
+    });
   }
 
   async getGoal(id: string, user: User) {
