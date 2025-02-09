@@ -13,65 +13,67 @@ export class BriefService {
   constructor(
     @InjectRepository(Brief)
     private readonly briefRepository: Repository<Brief>,
-    @InjectRepository(CategoryGroup)
-    private readonly categoryGroupRepository: Repository<CategoryGroup>,
-    @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>,
   ) {}
 
   async processUserAnswers(dto: AnswerToBriefDto, user: User) {
-    const brief = this.briefRepository.create({
-      briefAnswers: dto,
-      isCompleted: true,
-    });
-    await this.briefRepository.update(
-      {
-        user,
-      },
-      brief,
-    );
+    await this.briefRepository.manager.transaction(async (manager) => {
+      const briefRepository = manager.getRepository(Brief);
+      const categoryGroupRepository = manager.getRepository(CategoryGroup);
+      const categoryRepository = manager.getRepository(Category);
 
-    for (const [question, userAnswer] of Object.entries(dto)) {
-      const mapping = BriefQuiz[question];
+      const brief = briefRepository.create({
+        briefAnswers: dto,
+        isCompleted: true,
+      });
+      await briefRepository.update(
+        {
+          user,
+        },
+        brief,
+      );
 
-      if (mapping) {
-        // убираем последний элемент из ответов, если это отрицательный ответ
-        const filteredAnswers = userAnswer.filter(
-          (answer) =>
-            answer !== mapping.categories[mapping.categories.length - 1],
-        );
+      for (const [question, userAnswer] of Object.entries(dto)) {
+        const mapping = BriefQuiz[question];
 
-        const filteredGroup = filteredAnswers.length ? mapping.group : null;
+        if (mapping) {
+          // убираем последний элемент из ответов, если это отрицательный ответ
+          const filteredAnswers = userAnswer.filter(
+            (answer) =>
+              answer !== mapping.categories[mapping.categories.length - 1],
+          );
 
-        let categoryGroup = filteredGroup
-          ? await this.categoryGroupRepository.findOne({
-              where: { name: filteredGroup },
-            })
-          : null;
+          const filteredGroup = filteredAnswers.length ? mapping.group : null;
 
-        if (!categoryGroup && filteredGroup) {
-          categoryGroup = this.categoryGroupRepository.create({
-            name: filteredGroup,
-          });
-          await this.categoryGroupRepository.save(categoryGroup);
-        }
+          let categoryGroup = filteredGroup
+            ? await categoryGroupRepository.findOne({
+                where: { name: filteredGroup },
+              })
+            : null;
 
-        for (const answer of filteredAnswers) {
-          let category = await this.categoryRepository.findOne({
-            where: { name: answer, group: { id: categoryGroup.id } },
-            relations: ['group'],
-          });
-
-          if (!category) {
-            category = this.categoryRepository.create({
-              name: answer,
-              group: categoryGroup,
-              budget: user.budgets[0],
+          if (!categoryGroup && filteredGroup) {
+            categoryGroup = categoryGroupRepository.create({
+              name: filteredGroup,
             });
-            await this.categoryRepository.save(category);
+            await categoryGroupRepository.save(categoryGroup);
+          }
+
+          for (const answer of filteredAnswers) {
+            let category = await categoryRepository.findOne({
+              where: { name: answer, group: { id: categoryGroup.id } },
+              relations: ['group'],
+            });
+
+            if (!category) {
+              category = categoryRepository.create({
+                name: answer,
+                group: categoryGroup,
+                budget: user.budgets[0],
+              });
+              await categoryRepository.save(category);
+            }
           }
         }
       }
-    }
+    });
   }
 }
