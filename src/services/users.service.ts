@@ -41,7 +41,7 @@ export class UsersService {
   async findOne(id: string): Promise<UserInfo> {
     const user = await this.userRepository.findOne({
       where: { id },
-      select: ['id', 'login', 'email', 'settings', 'isActivated', 'yandexId'],
+      select: ['id', 'login', 'email', 'yandexId'],
       relations: ['brief'],
     });
 
@@ -52,9 +52,7 @@ export class UsersService {
       id: user.id,
       login: user.login,
       email: user.email,
-      settings: user.settings,
       yandexId: user.yandexId,
-      isActivated: user.isActivated,
       isBriefCompleted: user?.brief?.isCompleted,
     };
   }
@@ -64,7 +62,7 @@ export class UsersService {
       where: {
         email,
       },
-      relations: ['budgets', 'tokens'],
+      relations: ['tokens'],
     });
     if (!user)
       throw ApiException.notFound(this.t.tException('not_found', 'user'));
@@ -72,7 +70,7 @@ export class UsersService {
     return user;
   }
 
-  async update(id: string, dto: UpdateUserDto): Promise<UserInfo> {
+  async update(id: string, dto: UpdateUserDto) {
     await this.findOne(id);
 
     if (dto.email) {
@@ -90,9 +88,6 @@ export class UsersService {
     }
 
     await this.userRepository.update({ id }, dto);
-
-    const userInfo = await this.findOne(id);
-    return userInfo;
   }
 
   async remove(id: string) {
