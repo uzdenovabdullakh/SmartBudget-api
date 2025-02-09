@@ -8,9 +8,12 @@ import {
   AccountDetails,
   AccountsSummaryResponse,
 } from 'src/types/account.type';
-import { CreateAccountDto } from 'src/validation/account.schema';
+import {
+  CreateAccountDto,
+  UpdateAccountDto,
+} from 'src/validation/account.schema';
 import { PaginationQueryDto } from 'src/validation/pagination.schema';
-import { In, IsNull, Not, Repository } from 'typeorm';
+import { Equal, In, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class AccountsService {
@@ -254,5 +257,36 @@ export class AccountsService {
 
       await accountRepository.recover(accounts);
     });
+  }
+
+  async updateAccount(id: string, dto: UpdateAccountDto, user: User) {
+    const { name } = dto;
+    await this.getUserAccount(id, user);
+
+    const accountExist = await this.accountRepository.findOne({
+      where: {
+        id: Not(id),
+        name: Equal(name),
+        budget: {
+          user: {
+            id: user.id,
+          },
+        },
+      },
+      withDeleted: true,
+    });
+    if (accountExist) {
+      throw ApiException.conflictError(
+        this.t.tException('already_exists', 'account'),
+      );
+    }
+
+    await this.accountRepository.update(
+      {
+        id,
+      },
+      { name },
+    );
+    return await this.getUserAccount(id, user);
   }
 }
