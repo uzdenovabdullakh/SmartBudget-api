@@ -37,9 +37,8 @@ export class AccountsController {
     @Body() dto: CreateUnlinkedAccountDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.accountService.createUnlinkedAccount(dto, req.user);
+    await this.accountService.createUnlinkedAccount(dto, req.user);
     return {
-      data,
       message: this.t.tMessage('created', 'unlinked_account'),
     };
   }

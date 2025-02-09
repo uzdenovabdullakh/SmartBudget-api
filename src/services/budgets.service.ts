@@ -120,40 +120,48 @@ export class BudgetsService {
   }
 
   async deleteForever(ids: string[], user: User) {
-    const budgets = await this.budgetRepository.find({
-      where: {
-        id: In(ids),
-        user: { id: user.id },
-        deletedAt: Not(IsNull()),
-      },
-      withDeleted: true,
+    await this.budgetRepository.manager.transaction(async (manager) => {
+      const budgetRepository = manager.getRepository(Budget);
+
+      const budgets = await budgetRepository.find({
+        where: {
+          id: In(ids),
+          user: { id: user.id },
+          deletedAt: Not(IsNull()),
+        },
+        withDeleted: true,
+      });
+
+      const foundIds = budgets.map((budget) => budget.id);
+      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
+      if (notFoundIds.length > 0) {
+        throw ApiException.notFound(this.t.tException('not_found', 'budget'));
+      }
+
+      await budgetRepository.delete(ids);
     });
-
-    const foundIds = budgets.map((budget) => budget.id);
-    const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-    if (notFoundIds.length > 0) {
-      throw ApiException.notFound(this.t.tException('not_found', 'budget'));
-    }
-
-    await this.budgetRepository.delete(ids);
   }
 
   async restoreBudgets(ids: string[], user: User) {
-    const budgets = await this.budgetRepository.find({
-      where: {
-        id: In(ids),
-        user: { id: user.id },
-        deletedAt: Not(IsNull()),
-      },
-      withDeleted: true,
+    await this.budgetRepository.manager.transaction(async (manager) => {
+      const budgetRepository = manager.getRepository(Budget);
+
+      const budgets = await budgetRepository.find({
+        where: {
+          id: In(ids),
+          user: { id: user.id },
+          deletedAt: Not(IsNull()),
+        },
+        withDeleted: true,
+      });
+
+      const foundIds = budgets.map((budget) => budget.id);
+      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
+      if (notFoundIds.length > 0) {
+        throw ApiException.notFound(this.t.tException('not_found', 'budget'));
+      }
+
+      await budgetRepository.restore(ids);
     });
-
-    const foundIds = budgets.map((budget) => budget.id);
-    const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-    if (notFoundIds.length > 0) {
-      throw ApiException.notFound(this.t.tException('not_found', 'budget'));
-    }
-
-    await this.budgetRepository.restore(ids);
   }
 }

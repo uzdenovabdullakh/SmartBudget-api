@@ -33,9 +33,8 @@ export class GoalsController {
     @Body() dto: CreateGoalDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.goalsService.createGoal(dto, req.user);
+    await this.goalsService.createGoal(dto, req.user);
     return {
-      data,
       message: this.t.tMessage('created', 'goal'),
     };
   }

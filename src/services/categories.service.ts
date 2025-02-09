@@ -145,43 +145,51 @@ export class CategoriesService {
   }
 
   async deleteForever(ids: string[], user: User) {
-    const categories = await this.categoryRepository.find({
-      where: {
-        id: In(ids),
-        budget: {
-          user: { id: user.id },
+    await this.categoryRepository.manager.transaction(async (manager) => {
+      const categoryRepository = manager.getRepository(Category);
+
+      const categories = await categoryRepository.find({
+        where: {
+          id: In(ids),
+          budget: {
+            user: { id: user.id },
+          },
         },
-      },
-      withDeleted: true,
+        withDeleted: true,
+      });
+
+      const foundIds = categories.map((category) => category.id);
+      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
+      if (notFoundIds.length > 0) {
+        throw ApiException.notFound(this.t.tException('not_found', 'category'));
+      }
+
+      await categoryRepository.delete(ids);
     });
-
-    const foundIds = categories.map((category) => category.id);
-    const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-    if (notFoundIds.length > 0) {
-      throw ApiException.notFound(this.t.tException('not_found', 'category'));
-    }
-
-    await this.categoryRepository.delete(ids);
   }
 
   async restoreCategories(ids: string[], user: User) {
-    const categories = await this.categoryRepository.find({
-      where: {
-        id: In(ids),
-        budget: {
-          user: { id: user.id },
+    await this.categoryRepository.manager.transaction(async (manager) => {
+      const categoryRepository = manager.getRepository(Category);
+
+      const categories = await categoryRepository.find({
+        where: {
+          id: In(ids),
+          budget: {
+            user: { id: user.id },
+          },
         },
-      },
-      withDeleted: true,
+        withDeleted: true,
+      });
+
+      const foundIds = categories.map((category) => category.id);
+      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
+      if (notFoundIds.length > 0) {
+        throw ApiException.notFound(this.t.tException('not_found', 'category'));
+      }
+
+      await categoryRepository.restore(ids);
     });
-
-    const foundIds = categories.map((category) => category.id);
-    const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-    if (notFoundIds.length > 0) {
-      throw ApiException.notFound(this.t.tException('not_found', 'category'));
-    }
-
-    await this.categoryRepository.restore(ids);
   }
 
   async setCategoryLimit(id: string, dto: CategoryLimitDto, user: User) {
