@@ -40,8 +40,6 @@ describe('UsersService', () => {
       id: userId,
       login: 'test_user',
       email: 'test@example.com',
-      settings: { theme: 'dark' },
-      isActivated: true,
       brief: { isCompleted: true },
       yandexId: '321',
     });
@@ -50,7 +48,7 @@ describe('UsersService', () => {
 
     expect(mockUserRepository.findOne).toHaveBeenCalledWith({
       where: { id: userId },
-      select: ['id', 'login', 'email', 'settings', 'isActivated', 'yandexId'],
+      select: ['id', 'login', 'email', 'yandexId'],
       relations: ['brief'],
     });
 
@@ -58,8 +56,6 @@ describe('UsersService', () => {
       id: userId,
       login: 'test_user',
       email: 'test@example.com',
-      settings: { theme: 'dark' },
-      isActivated: true,
       isBriefCompleted: true,
       yandexId: '321',
     });
