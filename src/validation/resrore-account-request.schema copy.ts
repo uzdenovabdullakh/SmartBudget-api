@@ -1,9 +1,8 @@
-import { ErrorMessages } from 'src/constants/constants';
 import { z } from 'zod';
 
 export const RestoreAccountRequestSchema = z
   .object({
-    email: z.string().email({ message: ErrorMessages.INVALID_EMAIL }),
+    email: z.string().email({ message: 'Invalid email address' }),
   })
   .required();
 
