@@ -7,7 +7,6 @@ import {
   UsePipes,
   Req,
 } from '@nestjs/common';
-import { HttpMessage } from 'src/constants/constants';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { UsersService } from 'src/services/users.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
@@ -29,7 +28,7 @@ export class UsersController {
     const data = await this.usersService.update(req.user.id, dto);
     return {
       data,
-      message: HttpMessage.UPDATE('User'),
+      message: 'User was successfully updated',
     };
   }
 
@@ -37,7 +36,7 @@ export class UsersController {
   async remove(@Req() req: AuthenticationRequest) {
     await this.usersService.remove(req.user.id);
     return {
-      message: HttpMessage.DELETE('User'),
+      message: 'User was successfully removed',
     };
   }
 }

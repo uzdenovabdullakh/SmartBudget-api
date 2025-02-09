@@ -20,7 +20,6 @@ import {
   UpdateBudgetDto,
 } from 'src/validation/budget.schema';
 import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
-import { HttpMessage } from 'src/constants/constants';
 
 @Controller('budgets')
 export class BudgetsController {
@@ -35,7 +34,7 @@ export class BudgetsController {
     const data = await this.budgetService.createBudget(dto, req.user);
     return {
       data,
-      message: HttpMessage.CREATE('Budget'),
+      message: 'Budget was successfully created',
     };
   }
 
@@ -66,7 +65,7 @@ export class BudgetsController {
     const data = await this.budgetService.updateBudget(id, dto, req.user);
     return {
       data,
-      message: HttpMessage.UPDATE('Budget'),
+      message: 'Budget was successfully updated',
     };
   }
 
@@ -77,7 +76,7 @@ export class BudgetsController {
   ) {
     await this.budgetService.deleteBudget(id, req.user);
     return {
-      message: HttpMessage.DELETE('Budget'),
+      message: 'Budget was successfully removed',
     };
   }
 
@@ -89,7 +88,7 @@ export class BudgetsController {
   ) {
     await this.budgetService.deleteForever(dto, req.user);
     return {
-      message: HttpMessage.DELETE_PLURAL('Budget'),
+      message: 'Budgets was successfully removed',
     };
   }
 
@@ -101,7 +100,7 @@ export class BudgetsController {
   ) {
     await this.budgetService.restoreBudgets(dto, req.user);
     return {
-      message: HttpMessage.RESTORE('Budget'),
+      message: 'Budgets was successfully restored',
     };
   }
 }

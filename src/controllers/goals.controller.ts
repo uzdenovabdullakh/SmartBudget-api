@@ -9,7 +9,6 @@ import {
   Req,
   UsePipes,
 } from '@nestjs/common';
-import { HttpMessage } from 'src/constants/constants';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { GoalsService } from 'src/services/goals.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
@@ -33,7 +32,7 @@ export class GoalsController {
     const data = await this.goalsService.createGoal(dto, req.user);
     return {
       data,
-      message: HttpMessage.CREATE('Goal'),
+      message: 'Goal  was successfully created',
     };
   }
 
@@ -46,7 +45,7 @@ export class GoalsController {
     const data = await this.goalsService.updateGoal(id, dto, req.user);
     return {
       data,
-      message: HttpMessage.UPDATE('Goal'),
+      message: 'Goal was successfully updated',
     };
   }
 
@@ -57,7 +56,7 @@ export class GoalsController {
   ) {
     await this.goalsService.removeGoal(id, req.user);
     return {
-      message: HttpMessage.DELETE('Goal'),
+      message: 'Goal was successfully removed',
     };
   }
 }

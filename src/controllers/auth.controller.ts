@@ -46,7 +46,7 @@ import {
   RestoreAccountDto,
   RestoreAccountSchema,
 } from 'src/validation/restore-account.schema';
-import { ErrorMessages, HttpMessage } from 'src/constants/constants';
+import { ErrorMessages } from 'src/constants/constants';
 
 @Controller('auth')
 export class AuthController {
@@ -109,7 +109,7 @@ export class AuthController {
 
     await this.authService.activateUser(user, password);
 
-    return { message: HttpMessage.CONFIRM('Account') };
+    return { message: 'Account confirmed successfully' };
   }
 
   @Public()
@@ -129,7 +129,7 @@ export class AuthController {
       userName: user.login,
     });
 
-    return { message: HttpMessage.EMAIL_SENT('Password reset') };
+    return { message: 'Password reset email sent' };
   }
 
   @Public()
@@ -147,7 +147,7 @@ export class AuthController {
 
     await this.authService.updatePassword(user, newPassword);
 
-    return { message: HttpMessage.UPDATE('Password') };
+    return { message: 'Password updated successfully' };
   }
 
   @Patch('change-password')
@@ -157,7 +157,7 @@ export class AuthController {
   ) {
     const user = req.user;
     await this.authService.changePassword(user, dto);
-    return { message: HttpMessage.UPDATE('Password') };
+    return { message: 'Password changed successfully' };
   }
 
   @Post('logout')
@@ -183,7 +183,7 @@ export class AuthController {
       userName: user.login,
     });
 
-    return { message: HttpMessage.EMAIL_SENT('New') };
+    return { message: 'New email successfully sent' };
   }
 
   @Public()
@@ -203,7 +203,7 @@ export class AuthController {
       userName: user.login,
     });
 
-    return { message: HttpMessage.EMAIL_SENT('Restore account') };
+    return { message: 'Restore account email sent' };
   }
 
   @Public()
@@ -222,6 +222,6 @@ export class AuthController {
 
     await this.userService.restore(user.email);
 
-    return { message: HttpMessage.RESTORE_SINGULAR('Account') };
+    return { message: 'Account successfully restored' };
   }
 }

@@ -9,7 +9,6 @@ import {
   UsePipes,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { HttpMessage } from 'src/constants/constants';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { AccountsService } from 'src/services/accounts.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
@@ -32,7 +31,7 @@ export class AccountsController {
     const data = await this.accountService.createUnlinkedAccount(dto, req.user);
     return {
       data,
-      message: HttpMessage.CREATE('Unlinked account'),
+      message: 'Unlikned account was successfully created',
     };
   }
 
@@ -64,7 +63,7 @@ export class AccountsController {
   ) {
     await this.accountService.deleteAccount(id, req.user);
     return {
-      message: HttpMessage.DELETE('Account'),
+      message: 'Account was successfully removed',
     };
   }
 
@@ -76,7 +75,7 @@ export class AccountsController {
   ) {
     await this.accountService.deleteForever(dto, req.user);
     return {
-      message: HttpMessage.DELETE_PLURAL('Account'),
+      message: 'Accounts was successfully removed',
     };
   }
 
@@ -88,7 +87,7 @@ export class AccountsController {
   ) {
     await this.accountService.restoreAccounts(dto, req.user);
     return {
-      message: HttpMessage.RESTORE('Account'),
+      message: 'Accounts was successfully restored',
     };
   }
 }
