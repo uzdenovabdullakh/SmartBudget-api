@@ -75,8 +75,7 @@ export class CategoriesService {
       budget: { id: budgetId },
     });
 
-    const newCategory = await this.categoryRepository.save(category);
-    return await this.getCategory(newCategory.id, user);
+    await this.categoryRepository.save(category);
   }
 
   async getCategory(id: string, user: User) {
@@ -135,7 +134,6 @@ export class CategoriesService {
         name,
       },
     );
-    return await this.getCategory(id, user);
   }
 
   async removeCategory(id: string, user: User) {
@@ -208,6 +206,5 @@ export class CategoriesService {
     });
 
     await this.categorySpendingRepository.save(categorySpending);
-    return await this.getCategory(id, user);
   }
 }
