@@ -15,8 +15,8 @@ import { AccountsService } from 'src/services/accounts.service';
 import { TranslationService } from 'src/services/translation.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
-  CreateUnlinkedAccountDto,
-  CreateUnlinkedAccountSchema,
+  CreateAccountDto,
+  CreateAccountSchema,
 } from 'src/validation/account.schema';
 import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
 import {
@@ -32,12 +32,12 @@ export class AccountsController {
   ) {}
 
   @Post('unlinked-account')
-  @UsePipes(new ZodValidationPipe(CreateUnlinkedAccountSchema))
-  async createUnlinkedAccount(
-    @Body() dto: CreateUnlinkedAccountDto,
+  @UsePipes(new ZodValidationPipe(CreateAccountSchema))
+  async createAccount(
+    @Body() dto: CreateAccountDto,
     @Req() req: AuthenticationRequest,
   ) {
-    await this.accountService.createUnlinkedAccount(dto, req.user);
+    await this.accountService.createAccount(dto, req.user);
     return {
       message: this.t.tMessage('created', 'unlinked_account'),
     };

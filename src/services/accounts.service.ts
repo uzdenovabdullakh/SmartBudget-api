@@ -2,14 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TranslationService } from './translation.service';
 import { Account } from 'src/entities/account.entity';
-import { UnlinkedAccount } from 'src/entities/unlinked-account.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import {
   AccountDetails,
   AccountsSummaryResponse,
 } from 'src/types/account.type';
-import { CreateUnlinkedAccountDto } from 'src/validation/account.schema';
+import { CreateAccountDto } from 'src/validation/account.schema';
 import { PaginationQueryDto } from 'src/validation/pagination.schema';
 import { In, IsNull, Not, Repository } from 'typeorm';
 
@@ -21,19 +20,16 @@ export class AccountsService {
     private readonly t: TranslationService,
   ) {}
 
-  async createUnlinkedAccount(data: CreateUnlinkedAccountDto, user: User) {
+  async createAccount(data: CreateAccountDto, user: User) {
     await this.accountRepository.manager.transaction(async (manager) => {
-      const unlinkedAccountRepository = manager.getRepository(UnlinkedAccount);
       const accountRepository = manager.getRepository(Account);
 
-      const accountExist = await unlinkedAccountRepository.findOne({
+      const accountExist = await accountRepository.findOne({
         where: {
           name: data.name,
-          account: {
-            budget: {
-              user: {
-                id: user.id,
-              },
+          budget: {
+            user: {
+              id: user.id,
             },
           },
         },
@@ -46,16 +42,11 @@ export class AccountsService {
         );
       }
 
-      const unlinkedAccount = unlinkedAccountRepository.create(data);
-      const newUnlinkedAccount =
-        await unlinkedAccountRepository.save(unlinkedAccount);
-
       const newAccount = accountRepository.create({
         budget: {
           id: data.budgetId,
         },
-        unlinkedAccount: newUnlinkedAccount,
-        type: data.type,
+        ...data,
       });
 
       await accountRepository.save(newAccount);
@@ -77,8 +68,6 @@ export class AccountsService {
 
     const baseQueryBuilder = this.accountRepository
       .createQueryBuilder('a')
-      .leftJoin('a.unlinkedAccount', 'ua')
-      .leftJoin('a.bank', 'ba')
       .innerJoin('a.budget', 'b')
       .where('a.budget_id = :budgetId', { budgetId })
       .andWhere('b.user_id = :userId', { userId: user.id });
@@ -88,13 +77,13 @@ export class AccountsService {
         .clone()
         .select([
           'a.id AS id',
-          `COALESCE(ua.name, ba.name, 'Unknown') AS name`,
+          `a.name AS name`,
           'a.type AS type',
           `CASE
             WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
-              CONCAT(b.settings ->> 'currency', COALESCE(ua.amount, ba.amount, 0))
+              CONCAT(b.settings ->> 'currency', a.amount)
             ELSE
-              CONCAT(COALESCE(ua.amount, ba.amount, 0), b.settings ->> 'currency') END
+              CONCAT(a.amount, b.settings ->> 'currency') END
             AS amount`,
           'a.created_at AS "createdAt"',
         ])
@@ -103,10 +92,9 @@ export class AccountsService {
         .limit(pageSize);
 
       if (search) {
-        accountsQueryBuilder.andWhere(
-          '(LOWER(ua.name) LIKE :search OR LOWER(ba.name) LIKE :search)',
-          { search: `%${search}%` },
-        );
+        accountsQueryBuilder.andWhere('(LOWER(a.name) LIKE :search)', {
+          search: `%${search}%`,
+        });
       }
 
       return accountsQueryBuilder.getRawMany<AccountDetails>();
@@ -118,9 +106,9 @@ export class AccountsService {
         .select(
           `CASE
             WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
-              CONCAT(b.settings ->> 'currency', (COALESCE(SUM(ua.amount), 0) + COALESCE(SUM(ba.amount), 0)))
+              CONCAT(b.settings ->> 'currency', SUM(a.amount))
             ELSE
-            CONCAT((COALESCE(SUM(ua.amount), 0) + COALESCE(SUM(ba.amount), 0)), b.settings ->> 'currency') END`,
+            CONCAT(SUM(a.amount), b.settings ->> 'currency') END`,
           'totalBalance',
         )
         .groupBy('b.settings');
@@ -134,10 +122,9 @@ export class AccountsService {
         .select('COUNT(*)', 'totalCount');
 
       if (search) {
-        countQueryBuilder.andWhere(
-          '(LOWER(ua.name) LIKE :search OR LOWER(ba.name) LIKE :search)',
-          { search: `%${search.toLowerCase()}%` },
-        );
+        countQueryBuilder.andWhere('(LOWER(a.name) LIKE :search)', {
+          search: `%${search.toLowerCase()}%`,
+        });
       }
 
       return countQueryBuilder.getRawOne<{ totalCount: number }>();
@@ -160,19 +147,17 @@ export class AccountsService {
     const account = await this.accountRepository
       .createQueryBuilder('a')
       .innerJoin('a.budget', 'b')
-      .leftJoinAndSelect('a.unlinkedAccount', 'ua')
-      .leftJoinAndSelect('a.bank', 'ba')
       .where('a.id = :id', { id: id })
       .andWhere('b.user.id = :userId', { userId: user.id })
       .select([
         'a.id AS id',
-        `COALESCE(ua.name, ba.name, 'Unknown') AS name`,
+        `a.name AS name`,
         'a.type AS type',
         `CASE
           WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
-            CONCAT(b.settings ->> 'currency', COALESCE(ua.amount, ba.amount, 0))
+            CONCAT(b.settings ->> 'currency', a.amount)
           ELSE
-            CONCAT(COALESCE(ua.amount, ba.amount, 0), b.settings ->> 'currency') END
+            CONCAT(a.amount, b.settings ->> 'currency') END
           AS amount`,
         'a.created_at AS "createdAt"',
       ])
@@ -189,11 +174,9 @@ export class AccountsService {
       .createQueryBuilder('account')
       .withDeleted()
       .innerJoin('account.budget', 'budget')
-      .leftJoinAndSelect('account.unlinkedAccount', 'unlinkedAccount')
-      .leftJoinAndSelect('account.bank', 'bank')
       .where('budget.user.id = :userId', { userId: user.id })
       .andWhere('account.deletedAt IS NOT NULL')
-      .select(['account.id', 'unlinkedAccount.name', 'bank.name'])
+      .select(['account.id', 'account.name'])
       .getMany();
   }
 
@@ -232,7 +215,7 @@ export class AccountsService {
           },
         },
         withDeleted: true,
-        relations: ['unlinkedAccount', 'bank', 'budget', 'budget.user'],
+        relations: ['budget', 'budget.user'],
       });
 
       const foundIds = accounts.map((account) => account.id);
@@ -260,7 +243,7 @@ export class AccountsService {
           },
         },
         withDeleted: true,
-        relations: ['unlinkedAccount', 'bank', 'budget', 'budget.user'],
+        relations: ['budget', 'budget.user'],
       });
 
       const foundIds = accounts.map((account) => account.id);

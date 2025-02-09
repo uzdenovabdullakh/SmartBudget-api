@@ -2,7 +2,7 @@ import i18next from 'i18next';
 import { AccountType } from 'src/constants/enums';
 import { z } from 'src/utils/zod-map';
 
-export const CreateUnlinkedAccountSchema = z.object({
+export const CreateAccountSchema = z.object({
   name: z
     .string()
     .max(128, i18next.t('validation.Name too long', { ns: 'common' }))
@@ -14,6 +14,11 @@ export const CreateUnlinkedAccountSchema = z.object({
   amount: z.number().optional().default(0),
 });
 
-export type CreateUnlinkedAccountDto = z.infer<
-  typeof CreateUnlinkedAccountSchema
->;
+export const UpdateAccountSchema = CreateAccountSchema.pick({
+  name: true,
+})
+  .partial()
+  .optional();
+
+export type CreateAccountDto = z.infer<typeof CreateAccountSchema>;
+export type UpdateAccountDto = z.infer<typeof UpdateAccountSchema>;
