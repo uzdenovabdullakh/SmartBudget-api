@@ -35,9 +35,8 @@ export class BudgetsController {
     @Body() dto: CreateBudgetDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.budgetService.createBudget(dto, req.user);
+    await this.budgetService.createBudget(dto, req.user);
     return {
-      data,
       message: this.t.tMessage('created', 'budget'),
     };
   }
@@ -66,9 +65,8 @@ export class BudgetsController {
     @Body(new ZodValidationPipe(UpdateBudgetSchema)) dto: UpdateBudgetDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.budgetService.updateBudget(id, dto, req.user);
+    await this.budgetService.updateBudget(id, dto, req.user);
     return {
-      data,
       message: this.t.tMessage('updated', 'budget'),
     };
   }
