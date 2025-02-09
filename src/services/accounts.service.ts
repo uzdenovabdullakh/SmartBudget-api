@@ -22,7 +22,7 @@ export class AccountsService {
   ) {}
 
   async createUnlinkedAccount(data: CreateUnlinkedAccountDto, user: User) {
-    return await this.accountRepository.manager.transaction(async (manager) => {
+    await this.accountRepository.manager.transaction(async (manager) => {
       const unlinkedAccountRepository = manager.getRepository(UnlinkedAccount);
       const accountRepository = manager.getRepository(Account);
 

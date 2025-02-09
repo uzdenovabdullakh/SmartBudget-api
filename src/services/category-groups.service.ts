@@ -13,8 +13,6 @@ export class CategoryGroupsService {
   constructor(
     @InjectRepository(CategoryGroup)
     private readonly categoryGroupRepository: Repository<CategoryGroup>,
-    @InjectRepository(Category)
-    private readonly categoryRepository: Repository<Category>,
     private readonly t: TranslationService,
   ) {}
 
@@ -95,57 +93,67 @@ export class CategoryGroupsService {
   }
 
   async removeCategoryGroup(id: string, user: User) {
-    const categoryGroupExist = await this.categoryGroupRepository.findOne({
-      where: {
-        id,
-        categories: {
-          budget: {
-            user: {
-              id: user.id,
+    await this.categoryGroupRepository.manager.transaction(async (manager) => {
+      const categoryGroupRepository = manager.getRepository(CategoryGroup);
+      const categoryRepository = manager.getRepository(Category);
+
+      const categoryGroupExist = await categoryGroupRepository.findOne({
+        where: {
+          id,
+          categories: {
+            budget: {
+              user: {
+                id: user.id,
+              },
             },
           },
         },
-      },
-      relations: ['categories'],
-    });
+        relations: ['categories'],
+      });
 
-    if (!categoryGroupExist) {
-      throw ApiException.notFound(
-        this.t.tException('not_found', 'category_group'),
+      if (!categoryGroupExist) {
+        throw ApiException.notFound(
+          this.t.tException('not_found', 'category_group'),
+        );
+      }
+
+      await categoryGroupRepository.softDelete(id);
+      await categoryRepository.softDelete(
+        categoryGroupExist.categories.map((c) => c.id),
       );
-    }
-
-    await this.categoryGroupRepository.softDelete(id);
-    await this.categoryRepository.softDelete(
-      categoryGroupExist.categories.map((c) => c.id),
-    );
+    });
   }
 
   async restoreCategoryGroup(id: string, user: User) {
-    const categoryGroupExist = await this.categoryGroupRepository.findOne({
-      where: {
-        id,
-        categories: {
-          budget: {
-            user: {
-              id: user.id,
+    await this.categoryGroupRepository.manager.transaction(async (manager) => {
+      const categoryGroupRepository = manager.getRepository(CategoryGroup);
+      const categoryRepository = manager.getRepository(Category);
+
+      const categoryGroupExist = await categoryGroupRepository.findOne({
+        where: {
+          id,
+          categories: {
+            budget: {
+              user: {
+                id: user.id,
+              },
             },
           },
         },
-      },
-      relations: ['categories'],
-      withDeleted: true,
-    });
+        relations: ['categories'],
+        withDeleted: true,
+      });
 
-    if (!categoryGroupExist) {
-      throw ApiException.notFound(
-        this.t.tException('not_found', 'category_group'),
+      if (!categoryGroupExist) {
+        throw ApiException.notFound(
+          this.t.tException('not_found', 'category_group'),
+        );
+      }
+
+      await categoryGroupRepository.restore(id);
+      await categoryRepository.restore(
+        categoryGroupExist.categories.map((c) => c.id),
       );
-    }
-
-    await this.categoryGroupRepository.restore(id);
-    await this.categoryRepository.restore(
-      categoryGroupExist.categories.map((c) => c.id),
-    );
+    });
   }
 }
