@@ -65,32 +65,36 @@ export class AuthService {
   }
 
   async createToken(user: User, tokenType: TokensType): Promise<string> {
-    const { id, email, login, isActivated } = user;
-    const token = await this.jwtService.generateToken(
-      { id, email, login, isActivated },
-      tokenLifeTime[tokenType],
-    );
+    return await this.tokenRepository.manager.transaction(async (manager) => {
+      const tokenRepository = manager.getRepository(Token);
 
-    const expirationDuration = parseDuration(tokenLifeTime[tokenType]);
-    const expirationTime = new Date(Date.now() + expirationDuration);
+      const { id, email, login, isActivated } = user;
+      const token = await this.jwtService.generateToken(
+        { id, email, login, isActivated },
+        tokenLifeTime[tokenType],
+      );
 
-    const tokenEntity = new Token(user, token, tokenType, expirationTime);
+      const expirationDuration = parseDuration(tokenLifeTime[tokenType]);
+      const expirationTime = new Date(Date.now() + expirationDuration);
 
-    if (tokenType == TokensType.REFRESH_TOKEN) {
-      const userTokens = await this.tokenRepository.find({
-        where: { user: { id: user.id }, tokenType: TokensType.REFRESH_TOKEN },
-        relations: ['user'],
-      });
+      const tokenEntity = new Token(user, token, tokenType, expirationTime);
 
-      if (userTokens.length >= 3) {
-        await this.tokenRepository.remove(
-          userTokens.slice(0, userTokens.length - 2),
-        );
+      if (tokenType == TokensType.REFRESH_TOKEN) {
+        const userTokens = await tokenRepository.find({
+          where: { user: { id: user.id }, tokenType: TokensType.REFRESH_TOKEN },
+          relations: ['user'],
+        });
+
+        if (userTokens.length >= 3) {
+          await tokenRepository.remove(
+            userTokens.slice(0, userTokens.length - 2),
+          );
+        }
       }
-    }
-    await this.tokenRepository.save(tokenEntity);
+      await tokenRepository.save(tokenEntity);
 
-    return token;
+      return token;
+    });
   }
 
   async validateAndCreateToken(user: User, type: TokensType): Promise<string> {
@@ -149,23 +153,33 @@ export class AuthService {
   }
 
   async activateUser(user: User, password: string): Promise<void> {
-    user.password = await this.bcryptService.hash(password);
-    user.isActivated = true;
-    await this.userRepository.save(user);
+    await this.userRepository.manager.transaction(async (manager) => {
+      const userRepository = manager.getRepository(User);
+      const tokenRepository = manager.getRepository(Token);
 
-    await this.tokenRepository.delete({
-      user,
-      tokenType: TokensType.ACTIVATE_ACCOUNT,
+      user.password = await this.bcryptService.hash(password);
+      user.isActivated = true;
+      await userRepository.save(user);
+
+      await tokenRepository.delete({
+        user,
+        tokenType: TokensType.ACTIVATE_ACCOUNT,
+      });
     });
   }
 
   async updatePassword(user: User, newPassword: string): Promise<void> {
-    user.password = await this.bcryptService.hash(newPassword);
-    await this.userRepository.save(user);
+    await this.userRepository.manager.transaction(async (manager) => {
+      const userRepository = manager.getRepository(User);
+      const tokenRepository = manager.getRepository(Token);
 
-    await this.tokenRepository.delete({
-      user,
-      tokenType: TokensType.RESET_PASSWORD,
+      user.password = await this.bcryptService.hash(newPassword);
+      await userRepository.save(user);
+
+      await tokenRepository.delete({
+        user,
+        tokenType: TokensType.RESET_PASSWORD,
+      });
     });
   }
 
