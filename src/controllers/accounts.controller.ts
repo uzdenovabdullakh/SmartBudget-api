@@ -34,7 +34,7 @@ export class AccountsController {
     private readonly t: TranslationService,
   ) {}
 
-  @Post('unlinked-account')
+  @Post()
   @UsePipes(new ZodValidationPipe(CreateAccountSchema))
   async createAccount(
     @Body() dto: CreateAccountDto,
