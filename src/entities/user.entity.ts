@@ -33,13 +33,6 @@ export class User extends Timestamps {
   isActivated: boolean;
 
   @Column({
-    nullable: false,
-    default: () => `'{}'`,
-    type: 'jsonb',
-  })
-  settings: object;
-
-  @Column({
     nullable: true,
     type: 'varchar',
     length: 64,
@@ -56,16 +49,10 @@ export class User extends Timestamps {
   @OneToOne(() => Brief, (brief) => brief.user)
   brief: Brief;
 
-  constructor(
-    email: string,
-    login?: string,
-    password?: string,
-    settings?: object,
-  ) {
+  constructor(email: string, login?: string, password?: string) {
     super();
     this.email = email;
     this.password = password || null;
     this.login = login || email?.split('@')[0];
-    this.settings = settings || {};
   }
 }

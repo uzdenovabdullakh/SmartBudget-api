@@ -35,13 +35,12 @@ export class BudgetsService {
       ...data,
       user,
     });
-    const { user: budgetUser, ...newBudget } =
-      await this.budgetRepository.save(budget);
-    return newBudget;
+    await this.budgetRepository.save(budget);
   }
 
   async getUserBudgets(user: User) {
     return await this.budgetRepository.find({
+      select: ['id', 'name', 'createdAt'],
       where: {
         user: {
           id: user.id,
@@ -55,13 +54,13 @@ export class BudgetsService {
 
   async getUserBudget(id: string, user: User) {
     const budget = await this.budgetRepository.findOne({
+      select: ['id', 'name', 'createdAt', 'settings'],
       where: {
         id,
         user: {
           id: user.id,
         },
       },
-      relations: ['goals', 'accounts'],
     });
     if (!budget) {
       throw ApiException.notFound(this.t.tException('not_found', 'budget'));
@@ -107,7 +106,6 @@ export class BudgetsService {
       },
       { name, settings },
     );
-    return await this.getUserBudget(id, user);
   }
 
   async deleteBudget(id: string, user: User) {

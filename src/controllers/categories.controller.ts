@@ -37,9 +37,8 @@ export class CategoriesController {
     @Body() dto: CreateCategoryDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.categoriesService.createCategory(dto, req.user);
+    await this.categoriesService.createCategory(dto, req.user);
     return {
-      data,
       message: this.t.tMessage('created', 'category'),
     };
   }
@@ -58,9 +57,8 @@ export class CategoriesController {
     @Body(new ZodValidationPipe(UpdateCategorySchema)) dto: UpdateCategoryDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.categoriesService.updateCategory(id, dto, req.user);
+    await this.categoriesService.updateCategory(id, dto, req.user);
     return {
-      data,
       message: this.t.tMessage('updated', 'category'),
     };
   }
@@ -106,13 +104,8 @@ export class CategoriesController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body(new ZodValidationPipe(CategoryLimitSchema)) dto: CategoryLimitDto,
   ) {
-    const data = await this.categoriesService.setCategoryLimit(
-      id,
-      dto,
-      req.user,
-    );
+    await this.categoriesService.setCategoryLimit(id, dto, req.user);
     return {
-      data,
       message: this.t.tMessage('created', 'category_limit'),
     };
   }

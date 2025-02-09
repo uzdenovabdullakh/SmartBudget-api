@@ -45,9 +45,8 @@ export class GoalsController {
     @Body(new ZodValidationPipe(UpdateGoalSchema)) dto: UpdateGoalDto,
     @Req() req: AuthenticationRequest,
   ) {
-    const data = await this.goalsService.updateGoal(id, dto, req.user);
+    await this.goalsService.updateGoal(id, dto, req.user);
     return {
-      data,
       message: this.t.tMessage('updated', 'goal'),
     };
   }

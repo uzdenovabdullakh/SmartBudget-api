@@ -28,9 +28,8 @@ export class CategoryGroupsController {
   @Post()
   @UsePipes(new ZodValidationPipe(CreateCategoryGroupSchema))
   async createCategoryGroup(@Body() dto: CreateCategoryGroupDto) {
-    const data = await this.categoryGroupsService.createCategoryGroup(dto);
+    await this.categoryGroupsService.createCategoryGroup(dto);
     return {
-      data,
       message: this.t.tMessage('created', 'category_group'),
     };
   }

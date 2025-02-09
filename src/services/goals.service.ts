@@ -99,7 +99,6 @@ export class GoalsService {
         ...dto,
       },
     );
-    return await this.getGoal(id, user);
   }
 
   async removeGoal(id: string, user: User) {

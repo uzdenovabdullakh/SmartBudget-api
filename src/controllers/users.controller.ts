@@ -29,9 +29,8 @@ export class UsersController {
   @Patch()
   @UsePipes(new ZodValidationPipe(UpdateUserSchema))
   async update(@Req() req: AuthenticationRequest, @Body() dto: UpdateUserDto) {
-    const data = await this.usersService.update(req.user.id, dto);
+    await this.usersService.update(req.user.id, dto);
     return {
-      data,
       message: this.t.tMessage('updated', 'user'),
     };
   }

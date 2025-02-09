@@ -2,8 +2,6 @@ export type UserInfo = {
   id: string;
   email: string;
   login: string;
-  yandexId: string;
-  settings: object;
-  isActivated: boolean;
+  yandexId: string | null;
   isBriefCompleted: boolean;
 };
