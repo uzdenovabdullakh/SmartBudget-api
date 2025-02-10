@@ -10,5 +10,6 @@
   "password": "Пароль",
   "new": "Новое",
   "restore_account": "восстановление аккаунта",
-  "category_limit": "Лимит по категории"
+  "category_limit": "Лимит по категории",
+  "transaction": "Транзакция"
 }

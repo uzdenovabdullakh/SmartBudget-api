@@ -10,5 +10,6 @@
   "password": "Password",
   "new": "New",
   "restore_account": "Restore account",
-  "category_limit": "Category limit"
+  "category_limit": "Category limit",
+  "transaction": "Transaction"
 }
