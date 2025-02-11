@@ -11,5 +11,6 @@
   "new": "New",
   "restore_account": "Restore account",
   "category_limit": "Category limit",
-  "transaction": "Transaction"
+  "transaction": "Transaction",
+  "transaction_plural": "Transactions"
 }

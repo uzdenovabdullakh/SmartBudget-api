@@ -11,5 +11,6 @@
   "new": "Новое",
   "restore_account": "восстановление аккаунта",
   "category_limit": "Лимит по категории",
-  "transaction": "Транзакция"
+  "transaction": "Транзакция",
+  "transaction_plural": "Транзакции"
 }
