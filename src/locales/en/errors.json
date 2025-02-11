@@ -15,6 +15,7 @@
     "Name is required": "Name is required",
     "Token is required": "Token is required",
     "Invalid uuid":"Invalid uuid",
+    "Error format": "Error format",
     "Either budgetId or categoryId must be provided.": "Either budgetId or categoryId must be provided.",
     "Invalid email address": "Invalid email address",
     "Color 'Red' is not allowed": "Color 'Red' is not allowed",

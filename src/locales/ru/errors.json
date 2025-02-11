@@ -14,6 +14,7 @@
     "Name too long": "Название слишком длинное",
     "Name is required": "Название обязательный параметр",
     "Token is required": "Токен обязательный параметр",
+    "Error format": "Неверный формат",
     "Invalid uuid": "Неверный uuid",
     "Either budgetId or categoryId must be provided.": "Either budgetId or categoryId must be provided.",
     "Invalid email address": "Неверная электронная почта",

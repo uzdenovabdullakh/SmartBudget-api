@@ -6,5 +6,6 @@
   "restored": "{entity} успешно восстановлен",
   "restored_plural": "{entity} успешно восстановлены",
   "confirmed": "{entity} успешно подтвержден",
-  "email_sent": "Письмо {entity} отправлено"
+  "email_sent": "Письмо {entity} отправлено",
+  "imported": "{entity} успешно импортированы"
 }
