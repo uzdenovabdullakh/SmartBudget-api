@@ -1,9 +1,10 @@
 import i18next from 'i18next';
 import { TransactionType } from 'src/constants/enums';
 import { z } from 'src/utils/zod-map';
+import { PaginationQuerySchema } from './pagination.schema';
 
 const transactionSchema = z.object({
-  amount: z.number(),
+  amount: z.coerce.number(),
   type: z.nativeEnum(TransactionType),
   description: z.string(),
   date: z.string(),
@@ -21,14 +22,15 @@ export const ExportTypeSchema = z.object({ type: z.enum(['csv', 'xlsx']) });
 
 export const GetTransactionsSchema = z
   .object({
-    startDate: z.string(),
-    endDate: z.string(),
+    startDate: z.string().optional(),
+    endDate: z.string().optional(),
     category: z
       .string()
-      .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' })),
-    type: z.nativeEnum(TransactionType),
+      .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' }))
+      .optional(),
+    type: z.nativeEnum(TransactionType).optional(),
   })
-  .optional();
+  .and(PaginationQuerySchema);
 
 export type CreateTransactionDto = z.infer<typeof CreateTransactionSchema>;
 export type UpdateTransactionDto = z.infer<typeof UpdateTransactionSchema>;
