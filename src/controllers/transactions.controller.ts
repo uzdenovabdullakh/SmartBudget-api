@@ -55,11 +55,16 @@ export class TransactionsController {
   @Post('imports/bank-statements/:id')
   @UseInterceptors(FileInterceptor('file'))
   async importTransactions(
+    @Req() req: AuthenticationRequest,
     @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile(new UploadTransactionsValidationPipe())
     file: Express.Multer.File,
   ) {
-    await this.transactionsService.importTransactions(id, file);
+    await this.transactionsService.importTransactions(id, file, req.user);
+
+    return {
+      message: this.t.tMessage('imported', 'transaction_plural'),
+    };
   }
 
   @Get('export')
@@ -87,26 +92,24 @@ export class TransactionsController {
     res.send(buffer);
   }
 
-  @Get()
+  @Get(':id')
   async getTransactions(
+    @Req() req: AuthenticationRequest,
+    @Param('id', ParseUUIDPipe) id: string,
     @Query(new ZodValidationPipe(GetTransactionsSchema))
     query: GetTransactionsQuery,
   ) {
-    return await this.transactionsService.getTransactions(query);
-  }
-
-  @Get(':id')
-  async getTransactionById(@Param('id', ParseUUIDPipe) id: string) {
-    return await this.transactionsService.getTransactionById(id);
+    return await this.transactionsService.getTransactions(id, query, req.user);
   }
 
   @Put(':id')
   async updateTransaction(
+    @Req() req: AuthenticationRequest,
     @Param('id', ParseUUIDPipe) id: string,
     @Body(new ZodValidationPipe(UpdateTransactionSchema))
     dto: UpdateTransactionDto,
   ) {
-    await this.transactionsService.updateTransaction(id, dto);
+    await this.transactionsService.updateTransaction(id, dto, req.user);
     return {
       message: this.t.tMessage('updated', 'transaction'),
     };
@@ -114,10 +117,13 @@ export class TransactionsController {
 
   @Delete()
   @UsePipes(new ZodValidationPipe(ArrayOfIdsSchema))
-  async deleteTransactions(@Body() dto: string[]) {
-    await this.transactionsService.deleteTransactions(dto);
+  async deleteTransactions(
+    @Req() req: AuthenticationRequest,
+    @Body() dto: string[],
+  ) {
+    await this.transactionsService.deleteTransactions(dto, req.user);
     return {
-      message: this.t.tMessage('removed_plural', 'transaction'),
+      message: this.t.tMessage('removed_plural', 'transaction_plural'),
     };
   }
 }

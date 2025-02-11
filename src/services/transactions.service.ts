@@ -29,11 +29,12 @@ export class TransactionsService {
   ) {}
 
   async createTransaction(dto: CreateTransactionDto, user: User) {
+    const { accountId } = dto;
     const userBudget = await this.budgetRepository.findOne({
       where: {
         user: { id: user.id },
         accounts: {
-          id: dto.accountId,
+          id: accountId,
         },
       },
     });
@@ -41,13 +42,21 @@ export class TransactionsService {
       throw ApiException.notFound(this.t.tException('not_found', 'budget'));
     }
 
-    const transaction = this.transactionRepository.create(dto);
+    const transaction = this.transactionRepository.create({
+      account: {
+        id: accountId,
+      },
+      ...dto,
+    });
     await this.transactionRepository.save(transaction);
   }
 
-  async importTransactions(id: string, file: Express.Multer.File) {
+  async importTransactions(id: string, file: Express.Multer.File, user: User) {
     const account = await this.accountRepository.findOneBy({
       id,
+      budget: {
+        user,
+      },
     });
     if (!account) {
       throw ApiException.notFound(this.t.tException('not_found', 'account'));
@@ -102,31 +111,88 @@ export class TransactionsService {
     return Buffer.from(xlsxBuffer);
   }
 
-  async getTransactions(filter: GetTransactionsQuery) {
-    const query = this.transactionRepository.createQueryBuilder('transaction');
+  async getTransactions(id: string, filter: GetTransactionsQuery, user: User) {
+    const {
+      startDate,
+      endDate,
+      type,
+      category,
+      order = 'ASC',
+      page = 1,
+      pageSize = 10,
+      search = '',
+    } = filter;
 
-    if (filter.startDate)
-      query.andWhere('transaction.date >= :startDate', {
+    const offset = (page - 1) * pageSize;
+
+    const baseQueryBuilder = this.transactionRepository
+      .createQueryBuilder('transaction')
+      .innerJoin('transaction.account', 'account')
+      .innerJoin('account.budget', 'budget')
+      .where('budget.user.id = :userId', { userId: user.id })
+      .andWhere('account.id = :accountId', { accountId: id });
+
+    if (startDate)
+      baseQueryBuilder.andWhere('transaction.date >= :startDate', {
         startDate: filter.startDate,
       });
-    if (filter.endDate)
-      query.andWhere('transaction.date <= :endDate', {
+    if (endDate)
+      baseQueryBuilder.andWhere('transaction.date <= :endDate', {
         endDate: filter.endDate,
       });
-    if (filter.category)
-      query.andWhere('transaction.category = :category', {
+    if (category)
+      baseQueryBuilder.andWhere('transaction.category = :category', {
         category: filter.category,
       });
-    if (filter.type)
-      query.andWhere('transaction.type = :type', { type: filter.type });
+    if (type) baseQueryBuilder.andWhere('transaction.type = :type', { type });
+    if (search)
+      baseQueryBuilder.andWhere(
+        '(LOWER(transaction.description) LIKE :search)',
+        {
+          search: `%${search}%`,
+        },
+      );
 
-    return await query.getMany();
+    const transactionsQueryBuilder = baseQueryBuilder
+      .clone()
+      .select([
+        'transaction.id',
+        'transaction.amount',
+        'transaction.type',
+        'transaction.date',
+        'transaction.description',
+      ])
+      .orderBy('transaction.date', order)
+      .offset(offset)
+      .limit(pageSize);
+    const transactions = await transactionsQueryBuilder.getMany();
+
+    const countQueryBuilder = baseQueryBuilder
+      .clone()
+      .select('COUNT(*)', 'totalCount');
+    const totalCount = await countQueryBuilder.getRawOne<{
+      totalCount: number;
+    }>();
+
+    return {
+      transactions,
+      totalPages: Math.ceil((totalCount?.totalCount || 0) / pageSize),
+    };
   }
 
-  async getTransactionById(id: string) {
+  async getTransactionById(id: string, user: User) {
     const transaction = await this.transactionRepository.findOne({
-      where: { id },
+      where: {
+        id,
+        account: {
+          budget: {
+            user,
+          },
+        },
+      },
+      select: ['id'],
     });
+
     if (!transaction) {
       throw ApiException.notFound(
         this.t.tException('not_found', 'transaction'),
@@ -136,19 +202,24 @@ export class TransactionsService {
     return transaction;
   }
 
-  async updateTransaction(id: string, dto: UpdateTransactionDto) {
-    await this.getTransactionById(id);
+  async updateTransaction(id: string, dto: UpdateTransactionDto, user: User) {
+    await this.getTransactionById(id, user);
 
     await this.transactionRepository.update(id, dto);
   }
 
-  async deleteTransactions(ids: string[]) {
+  async deleteTransactions(ids: string[], user: User) {
     await this.transactionRepository.manager.connection.transaction(
       async (manager) => {
         const transactionRepository = manager.getRepository(Transaction);
         const transactions = await transactionRepository.find({
           where: {
             id: In(ids),
+            account: {
+              budget: {
+                user,
+              },
+            },
           },
         });
 
