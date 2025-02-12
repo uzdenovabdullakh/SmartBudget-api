@@ -52,10 +52,14 @@ export class TransactionsService {
   }
 
   async importTransactions(id: string, file: Express.Multer.File, user: User) {
-    const account = await this.accountRepository.findOneBy({
-      id,
-      budget: {
-        user,
+    const account = await this.accountRepository.findOne({
+      where: {
+        id,
+        budget: {
+          user: {
+            id: user.id,
+          },
+        },
       },
     });
     if (!account) {
@@ -186,7 +190,9 @@ export class TransactionsService {
         id,
         account: {
           budget: {
-            user,
+            user: {
+              id: user.id,
+            },
           },
         },
       },
@@ -217,7 +223,9 @@ export class TransactionsService {
             id: In(ids),
             account: {
               budget: {
-                user,
+                user: {
+                  id: user.id,
+                },
               },
             },
           },
