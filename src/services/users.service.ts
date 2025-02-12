@@ -62,7 +62,7 @@ export class UsersService {
       where: {
         email,
       },
-      relations: ['tokens'],
+      relations: ['tokens', 'budgets'],
     });
     if (!user)
       throw ApiException.notFound(this.t.tException('not_found', 'user'));
