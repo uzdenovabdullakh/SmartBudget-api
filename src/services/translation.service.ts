@@ -22,4 +22,10 @@ export class TranslationService {
       lang,
     });
   }
+
+  public tCategories(key: string, type: 'names' | 'groups') {
+    const lang = I18nContext.current().lang;
+
+    return this.i18n.t(`categories.${type}.${key}`, { lang });
+  }
 }
