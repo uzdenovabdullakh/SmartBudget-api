@@ -29,7 +29,7 @@ export const BriefQuiz: BriefQuizType = {
       'Bike',
       'Public transit',
       'Walk',
-      'Rideshare (Uber/Lyft/etc.)',
+      'Rideshare or taxi',
       'Wheelchair',
       'Motorcycle',
       'None of these apply to me',
@@ -95,6 +95,96 @@ export const BriefQuiz: BriefQuizType = {
       'Celebrations',
       'None of these apply to me',
     ],
+  },
+};
+
+export const categoryMapping = {
+  'Tell us about your home': {
+    group: 'housing',
+    categories: {
+      'I rent': 'rent',
+      'I own': 'mortgage',
+      Internet: 'internet',
+      Phone: 'phone',
+    },
+  },
+  'Do you currently have any debt?': {
+    group: 'debt',
+    categories: {
+      'Credit Card': 'credit_card',
+      'Student Loans': 'student_loans',
+      'Auto Loans': 'auto_loans',
+      'Personal Loans': 'personal_loans',
+      'Medical Debt': 'medical_debt',
+    },
+  },
+  'How do you get around?': {
+    group: 'transportation',
+    categories: {
+      Car: 'car',
+      Motorcycle: 'motorcycle',
+      'Public transit': 'public_transit',
+      'Rideshare or taxi': 'rideshare',
+      Bike: 'bike',
+    },
+    exclude: ['Walk', 'Wheelchair', 'None of these apply to me'],
+  },
+  'Which of these do you regularly spend money on?': {
+    group: 'basic_expenses',
+    categories: {
+      Groceries: 'groceries',
+      'Personal Care': 'personal_care',
+      Clothing: 'clothing',
+    },
+  },
+  'Which of these subscriptions do you have?': {
+    group: 'subscriptions',
+    categories: {
+      Music: 'music',
+      'Audio or ebooks': 'audio_ebooks',
+      'TV streaming': 'tv_streaming',
+      News: 'news',
+      Fitness: 'fitness',
+      'Meal delivery': 'meal_delivery',
+      'Online courses': 'online_courses',
+    },
+    exclude: ["I don't subscribe to any of these"],
+  },
+  'What are some expenses that always sneak up on you?': {
+    group: 'unexpected_expenses',
+    categories: {
+      'Annual credit card fees': 'annual_fees',
+      'Medical expenses': 'medical_expenses',
+      'Taxes or other fees': 'taxes_fees',
+    },
+  },
+  'Are you saving, or planning to, for any of these?': {
+    group: 'savings',
+    categories: {
+      'Emergency fund': 'emergency_fund',
+      'New car': 'new_car',
+      Retirement: 'retirement',
+      Vacation: 'vacation',
+      Investments: 'investments',
+      Baby: 'baby',
+      'New home': 'new_home',
+      Wedding: 'wedding',
+    },
+    exclude: ["I don't save for any of these"],
+  },
+  'What else do you want to include - without stress or guilt?': {
+    group: 'personal_spending',
+    categories: {
+      'Dining out': 'dining_out',
+      Charity: 'charity',
+      Entertainment: 'entertainment',
+      Gifts: 'gifts',
+      'Video games': 'video_games',
+      'Home decor': 'home_decor',
+      Hobbies: 'hobbies',
+      Celebrations: 'celebrations',
+    },
+    exclude: ['None of these apply to me'],
   },
 };
 
