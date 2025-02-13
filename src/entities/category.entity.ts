@@ -22,6 +22,30 @@ export class Category extends Timestamps {
   @Column({ nullable: false, length: 128, type: 'varchar' })
   name: string;
 
+  @Column({
+    default: 0,
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+  })
+  assigned: number;
+
+  @Column({
+    default: 0,
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+  })
+  activity: number;
+
+  @Column({
+    default: 0,
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+  })
+  available: number;
+
   @ManyToOne(() => CategoryGroup, (group) => group.categories, {
     nullable: false,
     onDelete: 'CASCADE',
