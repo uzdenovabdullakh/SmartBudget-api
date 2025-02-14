@@ -5,11 +5,6 @@ export enum TokensType {
   RESTORE_ACCOUNT = 'restore_account',
 }
 
-export enum TransactionType {
-  INCOME = 'income',
-  EXPENSE = 'expense',
-}
-
 export enum AccountType {
   CASH = 'cash',
   CARD = 'card',

@@ -29,7 +29,7 @@ export class TransactionsService {
   ) {}
 
   async createTransaction(dto: CreateTransactionDto, user: User) {
-    const { accountId } = dto;
+    const { accountId, category } = dto;
     const userBudget = await this.budgetRepository.findOne({
       where: {
         user: { id: user.id },
@@ -47,6 +47,7 @@ export class TransactionsService {
         id: accountId,
       },
       ...dto,
+      category: category ? { id: category } : undefined,
     });
     await this.transactionRepository.save(transaction);
   }
@@ -93,9 +94,9 @@ export class TransactionsService {
     const transactions = await this.transactionRepository.find();
     const data = transactions.map((t: Transaction) => ({
       id: t.id,
-      amount: t.amount,
+      inflow: t.inflow,
+      outflow: t.outflow,
       category: t.category?.name || null,
-      type: t.type,
       description: t.description,
       date: t.date.toISOString(),
     }));
@@ -119,7 +120,8 @@ export class TransactionsService {
     const {
       startDate,
       endDate,
-      type,
+      inflow,
+      outflow,
       category,
       order = 'ASC',
       page = 1,
@@ -148,7 +150,8 @@ export class TransactionsService {
       baseQueryBuilder.andWhere('transaction.category = :category', {
         category: filter.category,
       });
-    if (type) baseQueryBuilder.andWhere('transaction.type = :type', { type });
+    if (inflow) baseQueryBuilder.addOrderBy('transaction.inflow', order);
+    if (outflow) baseQueryBuilder.addOrderBy('transaction.outflow', order);
     if (search)
       baseQueryBuilder.andWhere(
         '(LOWER(transaction.description) LIKE :search)',
@@ -162,7 +165,8 @@ export class TransactionsService {
       .select([
         'transaction.id',
         'transaction.amount',
-        'transaction.type',
+        'transaction.outflow',
+        'transaction.inflow',
         'transaction.date',
         'transaction.description',
       ])
@@ -211,7 +215,10 @@ export class TransactionsService {
   async updateTransaction(id: string, dto: UpdateTransactionDto, user: User) {
     await this.getTransactionById(id, user);
 
-    await this.transactionRepository.update(id, dto);
+    await this.transactionRepository.update(id, {
+      ...dto,
+      category: dto.category ? { id: dto.category } : undefined,
+    });
   }
 
   async deleteTransactions(ids: string[], user: User) {
