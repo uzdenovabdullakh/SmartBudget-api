@@ -7,7 +7,8 @@
     "subscriptions": "Subscriptions and services",
     "unexpected_expenses": "Unplanned expenses",
     "savings": "Savings and investments",
-    "personal_spending": "Entertainment and personal expenses"
+    "personal_spending": "Entertainment and personal expenses",
+    "Inflow": "Inflow"
   },
   "names": {
     "rent": "Rent",
@@ -52,6 +53,7 @@
     "video_games": "Video games",
     "home_decor": "Home Decor",
     "hobbies": "Hobby",
-    "celebrations": "Holidays"
+    "celebrations": "Holidays",
+    "Inflow: Ready to Assign": "Inflow: Ready to Assign"
   }
 }
