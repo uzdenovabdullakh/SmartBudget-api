@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TranslationService } from './translation.service';
-import { Budget } from 'src/entities/budget.entity';
 import { CategoryGroup } from 'src/entities/category-group.entity';
 import { CategorySpending } from 'src/entities/category-spending.entity';
 import { Category } from 'src/entities/category.entity';
@@ -22,46 +21,33 @@ export class CategoriesService {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(CategoryGroup)
     private readonly categoryGroupRepository: Repository<CategoryGroup>,
-    @InjectRepository(Budget)
-    private readonly budgetRepository: Repository<Budget>,
     @InjectRepository(CategorySpending)
     private readonly categorySpendingRepository: Repository<CategorySpending>,
     private readonly t: TranslationService,
   ) {}
 
   async createCategory(dto: CreateCategoryDto, user: User) {
-    const { name, groupId, budgetId } = dto;
+    const { name, groupId } = dto;
 
     const categoryGroup = await this.categoryGroupRepository.findOne({
-      where: { id: groupId, budget: { id: budgetId } },
+      where: { id: groupId },
     });
-
     if (!categoryGroup) {
       throw ApiException.notFound(
         this.t.tException('not_found', 'category_group'),
       );
     }
 
-    const budget = await this.budgetRepository.findOne({
-      where: {
-        id: budgetId,
-        user: { id: user.id },
-      },
-      relations: ['user'],
-    });
-
-    if (!budget) {
-      throw ApiException.notFound(this.t.tException('not_found', 'budget'));
-    }
-
     const existingCategory = await this.categoryRepository.findOne({
       where: {
         name,
-        group: { id: groupId, budget: { id: budgetId } },
+        group: {
+          id: groupId,
+          budget: { user: { id: user.id } },
+        },
       },
       relations: ['budget', 'group'],
     });
-
     if (existingCategory) {
       throw ApiException.conflictError(
         this.t.tException('already_exists', 'category'),
@@ -88,13 +74,7 @@ export class CategoriesService {
           },
         },
       },
-      select: {
-        group: {
-          id: true,
-          name: true,
-        },
-      },
-      relations: ['categorySpending', 'goal', 'group'],
+      relations: ['group'],
     });
     if (!category) {
       throw ApiException.notFound(this.t.tException('not_found', 'category'));
@@ -105,24 +85,20 @@ export class CategoriesService {
 
   async updateCategory(id: string, dto: UpdateCategoryDto, user: User) {
     const { name } = dto;
-    await this.getCategory(id, user);
+    const category = await this.getCategory(id, user);
 
     const categoryExist = await this.categoryRepository.findOne({
       where: {
         id: Not(id),
         name: Equal(name),
         group: {
-          budget: {
-            user: {
-              id: user.id,
-            },
-          },
+          id: category.group.id,
         },
       },
       withDeleted: true,
     });
     if (categoryExist) {
-      throw ApiException.notFound(
+      throw ApiException.badRequest(
         this.t.tException('already_exists', 'category'),
       );
     }

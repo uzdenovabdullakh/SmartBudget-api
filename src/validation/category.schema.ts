@@ -11,9 +11,6 @@ export const CategorySchema = z
     groupId: z
       .string()
       .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' })),
-    budgetId: z
-      .string()
-      .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' })),
   })
   .required();
 
@@ -27,7 +24,6 @@ export const CategoryLimitSchema = z
 export const CreateCategorySchema = CategorySchema;
 export const UpdateCategorySchema = CategorySchema.partial().omit({
   groupId: true,
-  budgetId: true,
 });
 
 export type CreateCategoryDto = z.infer<typeof CreateCategorySchema>;
