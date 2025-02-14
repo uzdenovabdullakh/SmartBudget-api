@@ -31,3 +31,8 @@ export enum ReminderEntityType {
   DEBT = 'debt',
   CATEGORY_LIMIT = 'category_limit',
 }
+
+export enum TransactionType {
+  INCOME = 'income',
+  EXPENSE = 'expense',
+}

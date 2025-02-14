@@ -3,8 +3,8 @@ import { z } from 'src/utils/zod-map';
 import { PaginationQuerySchema } from './pagination.schema';
 
 const transactionSchema = z.object({
-  inflow: z.coerce.number().optional(),
-  outflow: z.coerce.number().optional(),
+  inflow: z.coerce.number().optional().nullable(),
+  outflow: z.coerce.number().optional().nullable(),
   description: z.string(),
   date: z.string(),
   category: z
