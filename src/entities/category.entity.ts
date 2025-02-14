@@ -13,6 +13,7 @@ import { Transaction } from './transaction.entity';
 import { CategorySpending } from './category-spending.entity';
 import { Budget } from './budget.entity';
 import { CategoryGroup } from './category-group.entity';
+import { NumericTransformer } from 'src/utils/numeric-transformer';
 
 @Entity({ name: 'categories' })
 export class Category extends Timestamps {
@@ -27,6 +28,7 @@ export class Category extends Timestamps {
     type: 'numeric',
     precision: 10,
     scale: 2,
+    transformer: new NumericTransformer(),
   })
   assigned: number;
 
@@ -35,6 +37,7 @@ export class Category extends Timestamps {
     type: 'numeric',
     precision: 10,
     scale: 2,
+    transformer: new NumericTransformer(),
   })
   activity: number;
 
@@ -43,6 +46,7 @@ export class Category extends Timestamps {
     type: 'numeric',
     precision: 10,
     scale: 2,
+    transformer: new NumericTransformer(),
   })
   available: number;
 

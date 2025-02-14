@@ -9,6 +9,7 @@ import {
 import { Budget } from './budget.entity';
 import { Timestamps } from './timestamps.entity';
 import { Reminder } from './reminder.entity';
+import { NumericTransformer } from 'src/utils/numeric-transformer';
 
 @Entity({ name: 'debts' })
 export class Debt extends Timestamps {
@@ -27,6 +28,7 @@ export class Debt extends Timestamps {
     type: 'numeric',
     precision: 10,
     scale: 2,
+    transformer: new NumericTransformer(),
   })
   amount: number;
 

@@ -10,6 +10,7 @@ import { Timestamps } from './timestamps.entity';
 import { Budget } from './budget.entity';
 import { Transaction } from './transaction.entity';
 import { AccountType } from 'src/constants/enums';
+import { NumericTransformer } from 'src/utils/numeric-transformer';
 
 @Entity({ name: 'accounts' })
 export class Account extends Timestamps {
@@ -32,6 +33,7 @@ export class Account extends Timestamps {
     type: 'numeric',
     precision: 10,
     scale: 2,
+    transformer: new NumericTransformer(),
   })
   amount: number;
 
