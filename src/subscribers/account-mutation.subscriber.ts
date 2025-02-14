@@ -35,8 +35,10 @@ export class AccountSubscriber implements EntitySubscriberInterface<Account> {
       const category = await categoryRepository.findOne({
         where: {
           name: 'Inflow: Ready to Assign',
-          budget: {
-            id: account.budget.id,
+          group: {
+            budget: {
+              id: account.budget.id,
+            },
           },
         },
       });

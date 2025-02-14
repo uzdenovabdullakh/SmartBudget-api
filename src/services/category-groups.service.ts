@@ -36,14 +36,13 @@ export class CategoryGroupsService {
   async getCategoriesGroups(id: string, user: User) {
     const categories = await this.categoryGroupRepository.find({
       where: {
-        categories: {
-          budget: {
-            id,
-            user: {
-              id: user.id,
-            },
+        budget: {
+          id,
+          user: {
+            id: user.id,
           },
         },
+        name: Not('Inflow'),
       },
       select: {
         id: true,
@@ -51,6 +50,9 @@ export class CategoryGroupsService {
         categories: {
           id: true,
           name: true,
+          available: true,
+          assigned: true,
+          activity: true,
         },
       },
       relations: ['categories'],
@@ -63,24 +65,22 @@ export class CategoryGroupsService {
     const categories = await this.categoryGroupRepository.find({
       where: {
         deletedAt: Not(IsNull()),
-        categories: {
-          budget: {
-            user: {
-              id: user.id,
-            },
+        budget: {
+          user: {
+            id: user.id,
           },
         },
       },
       select: {
         id: true,
         name: true,
+        budget: {
+          id: true,
+          name: true,
+        },
         categories: {
           id: true,
           name: true,
-          budget: {
-            id: true,
-            name: true,
-          },
         },
       },
       relations: ['categories'],
@@ -98,11 +98,9 @@ export class CategoryGroupsService {
       const categoryGroupExist = await categoryGroupRepository.findOne({
         where: {
           id,
-          categories: {
-            budget: {
-              user: {
-                id: user.id,
-              },
+          budget: {
+            user: {
+              id: user.id,
             },
           },
         },
@@ -115,10 +113,7 @@ export class CategoryGroupsService {
         );
       }
 
-      await categoryGroupRepository.softDelete(id);
-      await categoryRepository.softDelete(
-        categoryGroupExist.categories.map((c) => c.id),
-      );
+      await categoryRepository.softRemove(categoryGroupExist.categories);
     });
   }
 
@@ -130,11 +125,9 @@ export class CategoryGroupsService {
       const categoryGroupExist = await categoryGroupRepository.findOne({
         where: {
           id,
-          categories: {
-            budget: {
-              user: {
-                id: user.id,
-              },
+          budget: {
+            user: {
+              id: user.id,
             },
           },
         },
@@ -149,9 +142,7 @@ export class CategoryGroupsService {
       }
 
       await categoryGroupRepository.restore(id);
-      await categoryRepository.restore(
-        categoryGroupExist.categories.map((c) => c.id),
-      );
+      await categoryRepository.recover(categoryGroupExist.categories);
     });
   }
 }

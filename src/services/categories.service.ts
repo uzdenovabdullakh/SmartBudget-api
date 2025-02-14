@@ -33,7 +33,7 @@ export class CategoriesService {
     const { name, groupId, budgetId } = dto;
 
     const categoryGroup = await this.categoryGroupRepository.findOne({
-      where: { id: groupId },
+      where: { id: groupId, budget: { id: budgetId } },
     });
 
     if (!categoryGroup) {
@@ -57,8 +57,7 @@ export class CategoriesService {
     const existingCategory = await this.categoryRepository.findOne({
       where: {
         name,
-        budget: { id: budgetId },
-        group: { id: groupId },
+        group: { id: groupId, budget: { id: budgetId } },
       },
       relations: ['budget', 'group'],
     });
@@ -72,7 +71,6 @@ export class CategoriesService {
     const category = this.categoryRepository.create({
       name,
       group: categoryGroup,
-      budget: { id: budgetId },
     });
 
     await this.categoryRepository.save(category);
@@ -82,9 +80,11 @@ export class CategoriesService {
     const category = await this.categoryRepository.findOne({
       where: {
         id,
-        budget: {
-          user: {
-            id: user.id,
+        group: {
+          budget: {
+            user: {
+              id: user.id,
+            },
           },
         },
       },
@@ -105,16 +105,17 @@ export class CategoriesService {
 
   async updateCategory(id: string, dto: UpdateCategoryDto, user: User) {
     const { name } = dto;
-    const category = await this.getCategory(id, user);
+    await this.getCategory(id, user);
 
     const categoryExist = await this.categoryRepository.findOne({
       where: {
         id: Not(id),
         name: Equal(name),
-        budget: {
-          id: category.budget.id,
-          user: {
-            id: user.id,
+        group: {
+          budget: {
+            user: {
+              id: user.id,
+            },
           },
         },
       },
@@ -149,8 +150,10 @@ export class CategoriesService {
       const categories = await categoryRepository.find({
         where: {
           id: In(ids),
-          budget: {
-            user: { id: user.id },
+          group: {
+            budget: {
+              user: { id: user.id },
+            },
           },
         },
         withDeleted: true,
@@ -173,8 +176,10 @@ export class CategoriesService {
       const categories = await categoryRepository.find({
         where: {
           id: In(ids),
-          budget: {
-            user: { id: user.id },
+          group: {
+            budget: {
+              user: { id: user.id },
+            },
           },
         },
         withDeleted: true,
