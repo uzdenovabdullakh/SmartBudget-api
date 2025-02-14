@@ -5,11 +5,6 @@ export enum TokensType {
   RESTORE_ACCOUNT = 'restore_account',
 }
 
-export enum TransactionType {
-  INCOME = 'income',
-  EXPENSE = 'expense',
-}
-
 export enum AccountType {
   CASH = 'cash',
   CARD = 'card',
@@ -35,4 +30,9 @@ export enum ReminderEntityType {
   GOAL = 'goal',
   DEBT = 'debt',
   CATEGORY_LIMIT = 'category_limit',
+}
+
+export enum TransactionType {
+  INCOME = 'income',
+  EXPENSE = 'expense',
 }

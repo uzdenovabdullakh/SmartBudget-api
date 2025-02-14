@@ -30,15 +30,6 @@ export class Budget extends Timestamps {
   })
   settings: BudgetSettings;
 
-  @Column({
-    default: 0,
-    type: 'numeric',
-    precision: 10,
-    scale: 2,
-    name: 'assigned_amount',
-  })
-  assignedAmount: number;
-
   @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
     name: 'user_id',

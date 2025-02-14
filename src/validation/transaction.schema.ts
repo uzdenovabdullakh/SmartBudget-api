@@ -1,13 +1,16 @@
 import i18next from 'i18next';
-import { TransactionType } from 'src/constants/enums';
 import { z } from 'src/utils/zod-map';
 import { PaginationQuerySchema } from './pagination.schema';
 
 const transactionSchema = z.object({
-  amount: z.coerce.number(),
-  type: z.nativeEnum(TransactionType),
+  inflow: z.coerce.number().optional().nullable(),
+  outflow: z.coerce.number().optional().nullable(),
   description: z.string(),
   date: z.string(),
+  category: z
+    .string()
+    .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' }))
+    .optional(),
   accountId: z
     .string()
     .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' })),
@@ -28,7 +31,8 @@ export const GetTransactionsSchema = z
       .string()
       .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' }))
       .optional(),
-    type: z.nativeEnum(TransactionType).optional(),
+    inflow: z.boolean().optional(),
+    outflow: z.boolean().optional(),
   })
   .and(PaginationQuerySchema);
 

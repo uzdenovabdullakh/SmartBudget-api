@@ -7,8 +7,8 @@ import {
 } from 'typeorm';
 import { Timestamps } from './timestamps.entity';
 import { Category } from './category.entity';
-import { TransactionType } from 'src/constants/enums';
 import { Account } from './account.entity';
+import { NumericTransformer } from 'src/utils/numeric-transformer';
 
 @Entity({ name: 'transactions' })
 export class Transaction extends Timestamps {
@@ -16,20 +16,22 @@ export class Transaction extends Timestamps {
   id: string;
 
   @Column({
-    nullable: false,
+    nullable: true,
     type: 'numeric',
     precision: 10,
     scale: 2,
+    transformer: new NumericTransformer(),
   })
-  amount: number;
+  inflow: number;
 
   @Column({
-    type: 'enum',
-    enum: TransactionType,
-    enumName: 'enum_transactions_type',
-    nullable: false,
+    nullable: true,
+    type: 'numeric',
+    precision: 10,
+    scale: 2,
+    transformer: new NumericTransformer(),
   })
-  type: TransactionType;
+  outflow: number;
 
   @Column({
     nullable: true,
@@ -59,17 +61,13 @@ export class Transaction extends Timestamps {
   category: Category;
 
   constructor(
-    amount: number,
     account: Account,
-    type: TransactionType,
     date: Date,
     description?: string,
     category?: Category,
   ) {
     super();
-    this.amount = amount;
     this.account = account;
-    this.type = type;
     this.date = date;
     this.description = description || null;
     this.category = category || null;

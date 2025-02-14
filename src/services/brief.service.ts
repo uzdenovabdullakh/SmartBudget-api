@@ -77,6 +77,7 @@ export class BriefService {
             where: {
               name: translatedCategoryName,
               group: { id: categoryGroup.id },
+              budget: user.budgets[0],
             },
             relations: ['group'],
           });
@@ -91,6 +92,55 @@ export class BriefService {
           }
         }
       }
+
+      await this.createDefaultCategory(
+        categoryGroupRepository,
+        categoryRepository,
+        user,
+      );
     });
+  }
+
+  private async createDefaultCategory(
+    categoryGroupRepository: Repository<CategoryGroup>,
+    categoryRepository: Repository<Category>,
+    user: User,
+  ) {
+    const translatedGroupName = this.t.tCategories('Inflow', 'groups');
+
+    let categoryGroup = await categoryGroupRepository.findOne({
+      where: { name: translatedGroupName },
+    });
+
+    if (!categoryGroup) {
+      categoryGroup = categoryGroupRepository.create({
+        name: translatedGroupName,
+      });
+      await categoryGroupRepository.save(categoryGroup);
+    }
+
+    const translatedCategoryName = this.t.tCategories(
+      'Inflow: Ready to Assign',
+      'names',
+    );
+
+    let category = await categoryRepository.findOne({
+      where: {
+        name: translatedCategoryName,
+        group: { id: categoryGroup.id },
+        budget: user.budgets[0],
+      },
+      relations: ['group'],
+    });
+
+    if (!category) {
+      category = categoryRepository.create({
+        name: translatedCategoryName,
+        group: categoryGroup,
+        budget: user.budgets[0],
+        assigned: 0,
+      });
+      await categoryRepository.save(category);
+    }
   }
 }

@@ -7,7 +7,8 @@
     "subscriptions": "Подписки и сервисы",
     "unexpected_expenses": "Незапланированные расходы",
     "savings": "Сбережения и инвестиции",
-    "personal_spending": "Развлечения и личные траты"
+    "personal_spending": "Развлечения и личные траты",
+    "Inflow": "Приток"
   },
   "names": {
     "rent": "Аренда",
@@ -52,6 +53,7 @@
     "video_games": "Видеоигры",
     "home_decor": "Декор для дома",
     "hobbies": "Хобби",
-    "celebrations": "Праздники"
+    "celebrations": "Праздники",
+    "Inflow: Ready to Assign": "Приток: Готов к перераспределению"
   }
 }
