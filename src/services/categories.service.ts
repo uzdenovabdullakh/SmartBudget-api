@@ -8,8 +8,10 @@ import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { calculatePeriod } from 'src/utils/helpers';
 import {
+  AssigningChangeDto,
   CategoryLimitDto,
   CreateCategoryDto,
+  MoveAvaliableDto,
   UpdateCategoryDto,
 } from 'src/validation/category.schema';
 import { Equal, In, Not, Repository } from 'typeorm';
@@ -74,7 +76,7 @@ export class CategoriesService {
           },
         },
       },
-      relations: ['group'],
+      relations: ['group', 'group.budget'],
     });
     if (!category) {
       throw ApiException.notFound(this.t.tException('not_found', 'category'));
@@ -113,10 +115,97 @@ export class CategoriesService {
     );
   }
 
-  async removeCategory(id: string, user: User) {
-    await this.getCategory(id, user);
+  async getDefaultCategory(budgetId: string, user: User) {
+    const defaultCategory = await this.categoryRepository.findOne({
+      where: {
+        name: 'Inflow: Ready to Assign',
+        group: {
+          budget: {
+            id: budgetId,
+            user: {
+              id: user.id,
+            },
+          },
+        },
+      },
+      select: ['id', 'name', 'assigned', 'available', 'activity'],
+    });
 
-    await this.categoryRepository.softDelete(id);
+    return defaultCategory;
+  }
+
+  async assigningChange(id: string, dto: AssigningChangeDto, user: User) {
+    await this.categoryRepository.manager.connection.transaction(
+      async (manager) => {
+        const categoryRepository = manager.getRepository(Category);
+
+        const category = await this.getCategory(id, user);
+
+        const newAmount = dto.assigned - category.assigned;
+
+        await categoryRepository.update(category.id, {
+          assigned: category.assigned + newAmount,
+          available: category.available + newAmount,
+        });
+
+        const defaultCategory = await this.getDefaultCategory(
+          category.group.budget.id,
+          user,
+        );
+
+        await categoryRepository.update(defaultCategory.id, {
+          available: defaultCategory.available - newAmount,
+        });
+      },
+    );
+  }
+
+  async moveAvailable(dto: MoveAvaliableDto, user: User) {
+    const { from, to, amount } = dto;
+    await this.categoryRepository.manager.connection.transaction(
+      async (manager) => {
+        const categoryRepository = manager.getRepository(Category);
+
+        const fromCategory = await this.getCategory(from, user);
+        const toCategory = await this.getCategory(to, user);
+
+        await categoryRepository.update(from, {
+          assigned: fromCategory.assigned - amount,
+          available: fromCategory.available - amount,
+        });
+
+        await categoryRepository.update(to, {
+          assigned: toCategory.assigned + amount,
+          available: toCategory.available + amount,
+        });
+      },
+    );
+  }
+
+  async removeCategory(id: string, user: User) {
+    await this.categoryRepository.manager.connection.transaction(
+      async (manager) => {
+        const categoryRepository = manager.getRepository(Category);
+
+        const category = await this.getCategory(id, user);
+
+        const defaultCategory = await this.getDefaultCategory(
+          category.group.budget.id,
+          user,
+        );
+
+        await categoryRepository.update(defaultCategory.id, {
+          available: defaultCategory.available + category.available,
+        });
+
+        await categoryRepository.update(id, {
+          assigned: 0,
+          activity: 0,
+          available: 0,
+        });
+        await categoryRepository.softDelete(id);
+      },
+    );
   }
 
   async deleteForever(ids: string[], user: User) {
