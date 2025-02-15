@@ -32,7 +32,7 @@ export class AccountSubscriber implements EntitySubscriberInterface<Account> {
     await manager.connection.transaction(async (manager) => {
       const categoryRepository = manager.getRepository(Category);
 
-      const category = await categoryRepository.findOne({
+      const defaultCategory = await categoryRepository.findOne({
         where: {
           name: 'Inflow: Ready to Assign',
           group: {
@@ -46,9 +46,9 @@ export class AccountSubscriber implements EntitySubscriberInterface<Account> {
       const amount = isRemoved ? -account.amount : account.amount;
 
       await categoryRepository.update(
-        { id: category.id },
+        { id: defaultCategory.id },
         {
-          assigned: category.assigned + amount,
+          available: defaultCategory.available + amount,
         },
       );
     });
