@@ -1,8 +1,10 @@
 import {
   EntityManager,
   EntitySubscriberInterface,
+  Equal,
   EventSubscriber,
   InsertEvent,
+  Or,
   RemoveEvent,
 } from 'typeorm';
 import { Account } from 'src/entities/account.entity';
@@ -34,7 +36,10 @@ export class AccountSubscriber implements EntitySubscriberInterface<Account> {
 
       const defaultCategory = await categoryRepository.findOne({
         where: {
-          name: 'Inflow: Ready to Assign',
+          name: Or(
+            Equal('Inflow: Ready to Assign'),
+            Equal('Приток: Готов к перераспределению'),
+          ),
           group: {
             budget: {
               id: account.budget.id,

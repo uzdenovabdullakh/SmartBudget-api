@@ -116,9 +116,14 @@ export class CategoriesService {
   }
 
   async getDefaultCategory(budgetId: string, user: User) {
+    const translatedCategoryName = this.t.tCategories(
+      'Inflow: Ready to Assign',
+      'names',
+    );
+
     const defaultCategory = await this.categoryRepository.findOne({
       where: {
-        name: 'Inflow: Ready to Assign',
+        name: translatedCategoryName,
         group: {
           budget: {
             id: budgetId,
