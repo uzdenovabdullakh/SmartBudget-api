@@ -48,7 +48,7 @@ export class CategoriesService {
           budget: { user: { id: user.id } },
         },
       },
-      relations: ['budget', 'group'],
+      relations: ['group', 'group.budget'],
     });
     if (existingCategory) {
       throw ApiException.conflictError(
