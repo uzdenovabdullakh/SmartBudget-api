@@ -48,14 +48,6 @@ export class CategoriesController {
     };
   }
 
-  @Get(':id')
-  async getCategory(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: AuthenticationRequest,
-  ) {
-    return await this.categoriesService.getCategory(id, req.user);
-  }
-
   @Patch(':id')
   async updateCategory(
     @Param('id', ParseUUIDPipe) id: string,
