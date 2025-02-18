@@ -86,33 +86,35 @@ export class CategoriesService {
   }
 
   async updateCategory(id: string, dto: UpdateCategoryDto, user: User) {
-    const { name } = dto;
     const category = await this.getCategory(id, user);
 
-    const categoryExist = await this.categoryRepository.findOne({
-      where: {
-        id: Not(id),
-        name: Equal(name),
-        group: {
-          id: category.group.id,
+    // Проверяем уникальность имени, если оно передано
+    if (dto.name) {
+      const categoryExist = await this.categoryRepository.findOne({
+        where: {
+          id: Not(id),
+          name: Equal(dto.name),
+          group: {
+            id: category.group.id,
+          },
         },
-      },
-      withDeleted: true,
-    });
-    if (categoryExist) {
-      throw ApiException.badRequest(
-        this.t.tException('already_exists', 'category'),
-      );
+        withDeleted: true,
+      });
+
+      if (categoryExist) {
+        throw ApiException.badRequest(
+          this.t.tException('already_exists', 'category'),
+        );
+      }
     }
 
-    await this.categoryRepository.update(
-      {
-        id,
-      },
-      {
-        name,
-      },
-    );
+    const updateData: Partial<Category> = {};
+    if (dto.name) updateData.name = dto.name;
+    if (dto.groupId) updateData.group = { id: dto.groupId } as any;
+
+    if (Object.keys(updateData).length > 0) {
+      await this.categoryRepository.update({ id }, updateData);
+    }
   }
 
   async getDefaultCategory(budgetId: string, user: User) {

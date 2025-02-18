@@ -44,6 +44,7 @@ export class CategoryGroupsService {
   }
 
   async getGroupsWithCategories(id: string, user: User) {
+    const translateDefaultGroup = this.t.tCategories('Inflow', 'groups');
     const categories = await this.categoryGroupRepository.find({
       where: {
         budget: {
@@ -52,7 +53,7 @@ export class CategoryGroupsService {
             id: user.id,
           },
         },
-        name: Not('Inflow'),
+        name: Not(translateDefaultGroup),
       },
       select: {
         id: true,

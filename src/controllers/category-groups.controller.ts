@@ -75,7 +75,7 @@ export class CategoryGroupsController {
     };
   }
 
-  @Patch('id')
+  @Patch(':id')
   async updateCategoryGroup(
     @Param('id', ParseUUIDPipe) id: string,
     @Body(new ZodValidationPipe(UpdateCategoryGroupSchema))

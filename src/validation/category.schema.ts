@@ -38,9 +38,7 @@ export const MoveAvaliableSchema = z
   .required();
 
 export const CreateCategorySchema = CategorySchema;
-export const UpdateCategorySchema = CategorySchema.partial().omit({
-  groupId: true,
-});
+export const UpdateCategorySchema = CategorySchema.partial();
 
 export type CreateCategoryDto = z.infer<typeof CreateCategorySchema>;
 export type UpdateCategoryDto = z.infer<typeof UpdateCategorySchema>;
