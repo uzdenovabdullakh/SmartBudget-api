@@ -5,11 +5,12 @@ import { PaginationQuerySchema } from './pagination.schema';
 const transactionSchema = z.object({
   inflow: z.coerce.number().optional().nullable(),
   outflow: z.coerce.number().optional().nullable(),
-  description: z.string(),
+  description: z.string().nullable().optional(),
   date: z.string(),
   category: z
     .string()
     .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' }))
+    .nullable()
     .optional(),
   accountId: z
     .string()

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Equal, In, Or, Repository } from 'typeorm';
 import { parse } from 'csv-parse/sync';
 import * as XLSX from 'xlsx';
 import { stringify } from 'csv-stringify/sync';
@@ -137,6 +137,7 @@ export class TransactionsService {
       .createQueryBuilder('transaction')
       .innerJoin('transaction.account', 'account')
       .innerJoin('account.budget', 'budget')
+      .leftJoinAndSelect('transaction.category', 'category')
       .where('budget.user.id = :userId', { userId: user.id })
       .andWhere('account.id = :accountId', { accountId: id });
 
@@ -171,6 +172,7 @@ export class TransactionsService {
         'transaction.date',
         'transaction.description',
       ])
+      .addSelect(['category.id', 'category.name'])
       .orderBy('transaction.date', order)
       .offset(offset)
       .limit(pageSize);
@@ -202,7 +204,7 @@ export class TransactionsService {
         },
       },
       select: ['id', 'inflow', 'outflow'],
-      relations: ['account', 'category'],
+      relations: ['account', 'category', 'account.budget'],
     });
 
     if (!transaction) {
@@ -279,78 +281,74 @@ export class TransactionsService {
           : TransactionType.EXPENSE;
         const newAmount = newTransaction.inflow || newTransaction.outflow || 0;
 
-        await this.updateAccount({
-          accountRepository,
-          account: currentTransaction.account,
+        const amountImpact = this.calculateAmountImpact(
           currentAmount,
           currentType,
           newAmount,
           newType,
-        });
+        );
 
-        // Если категория изменилась
+        await this.updateAccount(
+          accountRepository,
+          currentTransaction.account,
+          amountImpact,
+        );
+
+        if (!newTransaction.category) {
+          await this.updateDefaultCategory(
+            categoryRepository,
+            currentTransaction.account,
+            amountImpact,
+          );
+        }
+
         if (this.hasCategoryChanged(currentTransaction, newTransaction)) {
-          await this.updateOldCategory({
+          await this.updateCategory(
             categoryRepository,
-            oldCategory: currentTransaction.category,
-            amount: currentAmount,
-            type: currentType,
-          });
-
-          await this.updateNewCategory({
+            currentTransaction.category,
+            -amountImpact,
+          );
+          await this.updateCategory(
             categoryRepository,
-            newCategory: newTransaction.category,
-            amount: newAmount,
-            type: newType,
-          });
+            newTransaction.category,
+            amountImpact,
+          );
         } else if (newTransaction.category) {
-          // Если категория не изменилась
-          await this.updateCurrentCategory({
+          await this.updateCategory(
             categoryRepository,
-            category: newTransaction.category,
-            currentAmount,
-            currentType,
-            newAmount,
-            newType,
-          });
+            newTransaction.category,
+            amountImpact,
+          );
         }
       },
     );
   }
 
-  private async updateAccount({
-    accountRepository,
-    account,
-    currentAmount,
-    currentType,
-    newAmount,
-    newType,
-  }: {
-    accountRepository: Repository<Account>;
-    account: Account;
-    currentAmount: number;
-    currentType: TransactionType;
-    newAmount: number;
-    newType: TransactionType;
-  }) {
-    let updatedAmount =
-      currentType === TransactionType.INCOME
-        ? newAmount - currentAmount
-        : -(newAmount - currentAmount);
+  private calculateAmountImpact(
+    currentAmount: number,
+    currentType: TransactionType,
+    newAmount: number,
+    newType: TransactionType,
+  ): number {
+    let amountImpact = newAmount - currentAmount;
     if (newType !== currentType) {
-      const oldAmountImpact =
-        currentType === TransactionType.INCOME ? -currentAmount : currentAmount;
-      const newAmountImpact =
-        newType === TransactionType.INCOME ? newAmount : -newAmount;
-
-      updatedAmount = oldAmountImpact + newAmountImpact;
+      amountImpact =
+        (currentType === TransactionType.INCOME
+          ? -currentAmount
+          : currentAmount) +
+        (newType === TransactionType.INCOME ? newAmount : -newAmount);
     }
+    return amountImpact;
+  }
 
+  private async updateAccount(
+    accountRepository: Repository<Account>,
+    account: Account,
+    amountImpact: number,
+  ) {
     await accountRepository.update(
       { id: account.id },
-      {
-        amount: account.amount + updatedAmount,
-      },
+      { amount: account.amount + amountImpact },
     );
   }
 
@@ -358,95 +356,47 @@ export class TransactionsService {
     currentTransaction: Transaction,
     newTransaction: Transaction,
   ): boolean {
-    return (
-      currentTransaction.category &&
-      newTransaction.category &&
-      currentTransaction.category.id !== newTransaction.category.id
-    );
+    return currentTransaction.category?.id !== newTransaction.category?.id;
   }
 
-  private async updateOldCategory({
-    categoryRepository,
-    oldCategory,
-    amount,
-    type,
-  }: {
-    categoryRepository: Repository<Category>;
-    oldCategory: Category;
-    amount: number;
-    type: TransactionType;
-  }) {
-    if (!oldCategory) return;
-    const amountImpact = type === TransactionType.INCOME ? -amount : amount;
-
-    await categoryRepository.update(
-      { id: oldCategory.id },
-      {
-        available: oldCategory.available + amountImpact,
-        activity: oldCategory.activity + amountImpact,
-      },
-    );
-  }
-
-  private async updateNewCategory({
-    categoryRepository,
-    newCategory,
-    amount,
-    type,
-  }: {
-    categoryRepository: Repository<Category>;
-    newCategory: Category;
-    amount: number;
-    type: TransactionType;
-  }) {
-    if (!newCategory) return;
-    const amountImpact = type === TransactionType.INCOME ? amount : -amount;
-
-    await categoryRepository.update(
-      { id: newCategory.id },
-      {
-        available: newCategory.available + amountImpact,
-        activity: newCategory.activity + amountImpact,
-      },
-    );
-  }
-
-  private async updateCurrentCategory({
-    categoryRepository,
-    category,
-    currentAmount,
-    currentType,
-    newAmount,
-    newType,
-  }: {
-    categoryRepository: Repository<Category>;
-    category: Category;
-    currentAmount: number;
-    currentType: TransactionType;
-    newAmount: number;
-    newType: TransactionType;
-  }) {
+  private async updateCategory(
+    categoryRepository: Repository<Category>,
+    category: Category,
+    amountImpact: number,
+  ) {
     if (!category) return;
-
-    let updatedAmount =
-      currentType === TransactionType.INCOME
-        ? newAmount - currentAmount
-        : -(newAmount - currentAmount);
-    if (newType !== currentType) {
-      const oldAmountImpact =
-        currentType === TransactionType.INCOME ? -currentAmount : currentAmount;
-      const newAmountImpact =
-        newType === TransactionType.INCOME ? newAmount : -newAmount;
-
-      updatedAmount = oldAmountImpact + newAmountImpact;
-    }
-
     await categoryRepository.update(
       { id: category.id },
       {
-        available: category.available + updatedAmount,
-        activity: category.activity + updatedAmount,
+        available: category.available + amountImpact,
+        activity: category.activity + amountImpact,
       },
+    );
+  }
+
+  private async updateDefaultCategory(
+    categoryRepository: Repository<Category>,
+    account: Account,
+    amountImpact: number,
+  ) {
+    const defaultCategory = await categoryRepository.findOne({
+      where: {
+        name: Or(
+          Equal('Inflow: Ready to Assign'),
+          Equal('Приток: Готов к перераспределению'),
+        ),
+        group: {
+          budget: {
+            id: account.budget.id,
+          },
+        },
+      },
+    });
+
+    await this.updateCategory(
+      categoryRepository,
+      defaultCategory,
+      amountImpact,
     );
   }
 }
