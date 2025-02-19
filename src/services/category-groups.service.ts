@@ -9,7 +9,7 @@ import {
   CreateCategoryGroupDto,
   UpdateCategoryGroupDto,
 } from 'src/validation/category-group.schema';
-import { Equal, FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
+import { Equal, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class CategoryGroupsService {
@@ -50,37 +50,35 @@ export class CategoryGroupsService {
   ) {
     const translateDefaultGroup = this.t.tCategories('Inflow', 'groups');
 
-    const where: FindOptionsWhere<CategoryGroup> = {
-      budget: {
-        id,
-        user: {
-          id: user.id,
-        },
-      },
-    };
+    const queryBuilder = this.categoryGroupRepository
+      .createQueryBuilder('categoryGroup')
+      .leftJoinAndSelect('categoryGroup.categories', 'categories')
+      .leftJoin('categoryGroup.budget', 'budget')
+      .leftJoin('budget.user', 'user')
+      .where('budget.id = :id', { id })
+      .andWhere('user.id = :userId', { userId: user.id })
+      .select([
+        'categoryGroup.id',
+        'categoryGroup.name',
+        'categoryGroup.order',
+        'categories.id',
+        'categories.name',
+        'categories.available',
+        'categories.assigned',
+        'categories.activity',
+        'categories.order',
+      ])
+      .orderBy('categoryGroup.order', 'ASC')
+      .addOrderBy('categoryGroup.createdAt', 'ASC')
+      .addOrderBy('categories.order', 'ASC');
 
     if (!withDefault) {
-      where.name = Not(translateDefaultGroup);
+      queryBuilder.andWhere('categoryGroup.name != :translateDefaultGroup', {
+        translateDefaultGroup,
+      });
     }
 
-    const categories = await this.categoryGroupRepository.find({
-      where,
-      select: {
-        id: true,
-        name: true,
-        categories: {
-          id: true,
-          name: true,
-          available: true,
-          assigned: true,
-          activity: true,
-        },
-      },
-      relations: ['categories'],
-      order: {
-        createdAt: 'ASC',
-      },
-    });
+    const categories = await queryBuilder.getMany();
 
     return categories;
   }
