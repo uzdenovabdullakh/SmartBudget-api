@@ -13,7 +13,7 @@ import { Debt } from './debt.entity';
 import { Goal } from './goal.entity';
 import { Analytic } from './analytic.entity';
 import { BudgetSettings } from 'src/validation/budget.schema';
-import { Category } from './category.entity';
+import { CategoryGroup } from './category-group.entity';
 
 @Entity({ name: 'budgets' })
 export class Budget extends Timestamps {
@@ -49,8 +49,8 @@ export class Budget extends Timestamps {
   @OneToMany(() => Analytic, (analytic) => analytic.budget)
   analytics: Analytic[];
 
-  @OneToMany(() => Category, (categories) => categories.budget)
-  categories: Category[];
+  @OneToMany(() => CategoryGroup, (categoryGroups) => categoryGroups.budget)
+  categoryGroups: CategoryGroup[];
 
   constructor(name: string, user: User, settings?: BudgetSettings) {
     super();

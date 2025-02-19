@@ -9,6 +9,7 @@ import {
   Req,
   UsePipes,
   ParseUUIDPipe,
+  Put,
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { CategoriesService } from 'src/services/categories.service';
@@ -16,10 +17,16 @@ import { TranslationService } from 'src/services/translation.service';
 import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
 import {
+  AssigningChangeDto,
+  AssigningChangeSchema,
   CategoryLimitDto,
   CategoryLimitSchema,
   CreateCategoryDto,
   CreateCategorySchema,
+  MoveAvaliableDto,
+  MoveAvaliableSchema,
+  ReorderCategoriesDto,
+  ReorderCategoriesSchema,
   UpdateCategoryDto,
   UpdateCategorySchema,
 } from 'src/validation/category.schema';
@@ -43,14 +50,6 @@ export class CategoriesController {
     };
   }
 
-  @Get(':id')
-  async getCategory(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: AuthenticationRequest,
-  ) {
-    return await this.categoriesService.getCategory(id, req.user);
-  }
-
   @Patch(':id')
   async updateCategory(
     @Param('id', ParseUUIDPipe) id: string,
@@ -58,6 +57,47 @@ export class CategoriesController {
     @Req() req: AuthenticationRequest,
   ) {
     await this.categoriesService.updateCategory(id, dto, req.user);
+    return {
+      message: this.t.tMessage('updated', 'category'),
+    };
+  }
+
+  @Post('reorder')
+  @UsePipes(new ZodValidationPipe(ReorderCategoriesSchema))
+  async reorderCategories(
+    @Body()
+    dto: ReorderCategoriesDto,
+  ) {
+    await this.categoriesService.reorderCategories(dto);
+  }
+
+  @Get('default/:id')
+  async getDefaultCategory(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticationRequest,
+  ) {
+    return await this.categoriesService.getDefaultCategory(id, req.user);
+  }
+
+  @Patch('assign/:id')
+  async assigningChange(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(AssigningChangeSchema)) dto: AssigningChangeDto,
+    @Req() req: AuthenticationRequest,
+  ) {
+    await this.categoriesService.assigningChange(id, dto, req.user);
+    return {
+      message: this.t.tMessage('updated', 'category'),
+    };
+  }
+
+  @Put('move')
+  @UsePipes(new ZodValidationPipe(MoveAvaliableSchema))
+  async moveAvailable(
+    @Req() req: AuthenticationRequest,
+    @Body() dto: MoveAvaliableDto,
+  ) {
+    await this.categoriesService.moveAvailable(dto, req.user);
     return {
       message: this.t.tMessage('updated', 'category'),
     };

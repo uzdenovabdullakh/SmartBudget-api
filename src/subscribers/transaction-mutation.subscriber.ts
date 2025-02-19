@@ -1,8 +1,10 @@
 import {
   EntityManager,
   EntitySubscriberInterface,
+  Equal,
   EventSubscriber,
   InsertEvent,
+  Or,
   RemoveEvent,
 } from 'typeorm';
 import { Transaction } from 'src/entities/transaction.entity';
@@ -39,6 +41,7 @@ export class TransactionSubscriber
 
       const account = await accountRepository.findOne({
         where: { id: transaction.account.id },
+        relations: ['budget'],
       });
 
       const type = transaction.inflow
@@ -58,6 +61,35 @@ export class TransactionSubscriber
               : account.amount - amount,
         },
       );
+
+      if (!transaction.category) {
+        const defaultCategory = await categoryRepository.findOne({
+          where: {
+            name: Or(
+              Equal('Inflow: Ready to Assign'),
+              Equal('Приток: Готов к перераспределению'),
+            ),
+            group: {
+              budget: {
+                id: account.budget.id,
+              },
+            },
+          },
+        });
+
+        const defaultUpdateAmount =
+          type === TransactionType.INCOME
+            ? account.amount + amount
+            : account.amount - amount;
+
+        await categoryRepository.update(
+          { id: defaultCategory.id },
+          {
+            available: defaultUpdateAmount,
+            activity: defaultUpdateAmount,
+          },
+        );
+      }
 
       if (transaction.category) {
         const categoryEntity = await categoryRepository.findOne({

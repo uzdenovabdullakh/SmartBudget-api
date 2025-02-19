@@ -11,7 +11,6 @@ import { Timestamps } from './timestamps.entity';
 import { Goal } from './goal.entity';
 import { Transaction } from './transaction.entity';
 import { CategorySpending } from './category-spending.entity';
-import { Budget } from './budget.entity';
 import { CategoryGroup } from './category-group.entity';
 import { NumericTransformer } from 'src/utils/numeric-transformer';
 
@@ -50,19 +49,15 @@ export class Category extends Timestamps {
   })
   available: number;
 
+  @Column({ type: 'smallint', nullable: true })
+  order: number;
+
   @ManyToOne(() => CategoryGroup, (group) => group.categories, {
     nullable: false,
     onDelete: 'CASCADE',
   })
   @JoinColumn({ name: 'group_id' })
   group: CategoryGroup;
-
-  @ManyToOne(() => Budget, { onDelete: 'CASCADE', nullable: false })
-  @JoinColumn({
-    name: 'budget_id',
-    foreignKeyConstraintName: 'fk_categories_to_budget',
-  })
-  budget: Budget;
 
   @OneToOne(() => Goal, { onDelete: 'SET NULL', nullable: true })
   @JoinColumn({
@@ -80,10 +75,9 @@ export class Category extends Timestamps {
   )
   categorySpending: CategorySpending;
 
-  constructor(name: string, group: string, budget: Budget, goal?: Goal) {
+  constructor(name: string, group: string, goal?: Goal) {
     super();
     this.name = name;
-    this.budget = budget;
     this.goal = goal;
   }
 }

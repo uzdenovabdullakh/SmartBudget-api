@@ -5,7 +5,9 @@ import {
   Get,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
+  Query,
   Req,
   UsePipes,
 } from '@nestjs/common';
@@ -16,6 +18,12 @@ import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
   CreateCategoryGroupDto,
   CreateCategoryGroupSchema,
+  GetCategoryGroup,
+  GetCategoryGroupSchema,
+  ReorderCategoryGroupsDto,
+  ReorderCategoryGroupsSchema,
+  UpdateCategoryGroupDto,
+  UpdateCategoryGroupSchema,
 } from 'src/validation/category-group.schema';
 
 @Controller('category-groups')
@@ -35,11 +43,17 @@ export class CategoryGroupsController {
   }
 
   @Get(':id')
-  async getCategoriesGroups(
+  async getGroupsWithCategories(
+    @Query(new ZodValidationPipe(GetCategoryGroupSchema))
+    query: GetCategoryGroup,
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticationRequest,
   ) {
-    return await this.categoryGroupsService.getCategoriesGroups(id, req.user);
+    return await this.categoryGroupsService.getGroupsWithCategories(
+      id,
+      query.default,
+      req.user,
+    );
   }
 
   @Get('removed')
@@ -54,7 +68,7 @@ export class CategoryGroupsController {
   ) {
     await this.categoryGroupsService.removeCategoryGroup(id, req.user);
     return {
-      message: this.t.tMessage('removed', 'category'),
+      message: this.t.tMessage('removed', 'category_group'),
     };
   }
 
@@ -67,5 +81,27 @@ export class CategoryGroupsController {
     return {
       message: this.t.tMessage('restored', 'category'),
     };
+  }
+
+  @Patch(':id')
+  async updateCategoryGroup(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(UpdateCategoryGroupSchema))
+    dto: UpdateCategoryGroupDto,
+    @Req() req: AuthenticationRequest,
+  ) {
+    await this.categoryGroupsService.updateCategoryGroup(id, dto, req.user);
+    return {
+      message: this.t.tMessage('updated', 'category_group'),
+    };
+  }
+
+  @Post('reorder')
+  @UsePipes(new ZodValidationPipe(ReorderCategoryGroupsSchema))
+  async reorderGroups(
+    @Body()
+    dto: ReorderCategoryGroupsDto,
+  ) {
+    await this.categoryGroupsService.reorderGroups(dto);
   }
 }

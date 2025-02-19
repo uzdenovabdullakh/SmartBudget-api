@@ -1,8 +1,10 @@
 import {
   EntityManager,
   EntitySubscriberInterface,
+  Equal,
   EventSubscriber,
   InsertEvent,
+  Or,
   RemoveEvent,
 } from 'typeorm';
 import { Account } from 'src/entities/account.entity';
@@ -32,11 +34,16 @@ export class AccountSubscriber implements EntitySubscriberInterface<Account> {
     await manager.connection.transaction(async (manager) => {
       const categoryRepository = manager.getRepository(Category);
 
-      const category = await categoryRepository.findOne({
+      const defaultCategory = await categoryRepository.findOne({
         where: {
-          name: 'Inflow: Ready to Assign',
-          budget: {
-            id: account.budget.id,
+          name: Or(
+            Equal('Inflow: Ready to Assign'),
+            Equal('Приток: Готов к перераспределению'),
+          ),
+          group: {
+            budget: {
+              id: account.budget.id,
+            },
           },
         },
       });
@@ -44,9 +51,9 @@ export class AccountSubscriber implements EntitySubscriberInterface<Account> {
       const amount = isRemoved ? -account.amount : account.amount;
 
       await categoryRepository.update(
-        { id: category.id },
+        { id: defaultCategory.id },
         {
-          assigned: category.assigned + amount,
+          available: defaultCategory.available + amount,
         },
       );
     });
