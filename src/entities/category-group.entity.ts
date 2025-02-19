@@ -18,6 +18,9 @@ export class CategoryGroup extends Timestamps {
   @Column({ type: 'varchar', length: 128, nullable: false })
   name: string;
 
+  @Column({ type: 'smallint', nullable: true })
+  order: number;
+
   @OneToMany(() => Category, (category) => category.group)
   categories: Category[];
 

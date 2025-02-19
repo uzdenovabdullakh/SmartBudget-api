@@ -115,6 +115,7 @@ export class BriefService {
       categoryGroup = categoryGroupRepository.create({
         name: translatedGroupName,
         budget: user.budgets[0],
+        order: 0,
       });
       await categoryGroupRepository.save(categoryGroup);
     }
@@ -137,6 +138,7 @@ export class BriefService {
         name: translatedCategoryName,
         group: categoryGroup,
         assigned: 0,
+        order: 0,
       });
       await categoryRepository.save(category);
     }

@@ -49,6 +49,9 @@ export class Category extends Timestamps {
   })
   available: number;
 
+  @Column({ type: 'smallint', nullable: true })
+  order: number;
+
   @ManyToOne(() => CategoryGroup, (group) => group.categories, {
     nullable: false,
     onDelete: 'CASCADE',
