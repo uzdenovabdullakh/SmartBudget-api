@@ -25,6 +25,8 @@ import {
   CreateCategorySchema,
   MoveAvaliableDto,
   MoveAvaliableSchema,
+  ReorderCategoriesDto,
+  ReorderCategoriesSchema,
   UpdateCategoryDto,
   UpdateCategorySchema,
 } from 'src/validation/category.schema';
@@ -58,6 +60,15 @@ export class CategoriesController {
     return {
       message: this.t.tMessage('updated', 'category'),
     };
+  }
+
+  @Post('reorder')
+  @UsePipes(new ZodValidationPipe(ReorderCategoriesSchema))
+  async reorderCategories(
+    @Body()
+    dto: ReorderCategoriesDto,
+  ) {
+    await this.categoriesService.reorderCategories(dto);
   }
 
   @Get('default/:id')

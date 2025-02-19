@@ -20,6 +20,8 @@ import {
   CreateCategoryGroupSchema,
   GetCategoryGroup,
   GetCategoryGroupSchema,
+  ReorderCategoryGroupsDto,
+  ReorderCategoryGroupsSchema,
   UpdateCategoryGroupDto,
   UpdateCategoryGroupSchema,
 } from 'src/validation/category-group.schema';
@@ -92,5 +94,14 @@ export class CategoryGroupsController {
     return {
       message: this.t.tMessage('updated', 'category_group'),
     };
+  }
+
+  @Post('reorder')
+  @UsePipes(new ZodValidationPipe(ReorderCategoryGroupsSchema))
+  async reorderGroups(
+    @Body()
+    dto: ReorderCategoryGroupsDto,
+  ) {
+    await this.categoryGroupsService.reorderGroups(dto);
   }
 }

@@ -12,6 +12,7 @@ import {
   CategoryLimitDto,
   CreateCategoryDto,
   MoveAvaliableDto,
+  ReorderCategoriesDto,
   UpdateCategoryDto,
 } from 'src/validation/category.schema';
 import { Equal, In, Not, Repository } from 'typeorm';
@@ -115,6 +116,19 @@ export class CategoriesService {
     if (Object.keys(updateData).length > 0) {
       await this.categoryRepository.update({ id }, updateData);
     }
+  }
+
+  async reorderCategories(dto: ReorderCategoriesDto) {
+    await this.categoryRepository.manager.connection.transaction(
+      async (manager) => {
+        for (const category of dto.categories) {
+          await manager.getRepository(Category).update(category.id, {
+            order: category.order,
+            group: { id: category.groupId },
+          });
+        }
+      },
+    );
   }
 
   async getDefaultCategory(budgetId: string, user: User) {

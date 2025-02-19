@@ -37,6 +37,20 @@ export const MoveAvaliableSchema = z
   })
   .required();
 
+export const ReorderCategoriesSchema = z.object({
+  categories: z.array(
+    z.object({
+      id: z
+        .string()
+        .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' })),
+      groupId: z
+        .string()
+        .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' })),
+      order: z.number().int().min(0),
+    }),
+  ),
+});
+
 export const CreateCategorySchema = CategorySchema;
 export const UpdateCategorySchema = CategorySchema.partial();
 
@@ -45,3 +59,4 @@ export type UpdateCategoryDto = z.infer<typeof UpdateCategorySchema>;
 export type CategoryLimitDto = z.infer<typeof CategoryLimitSchema>;
 export type AssigningChangeDto = z.infer<typeof AssigningChangeSchema>;
 export type MoveAvaliableDto = z.infer<typeof MoveAvaliableSchema>;
+export type ReorderCategoriesDto = z.infer<typeof ReorderCategoriesSchema>;

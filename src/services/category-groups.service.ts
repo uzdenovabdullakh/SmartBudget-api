@@ -7,6 +7,7 @@ import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import {
   CreateCategoryGroupDto,
+  ReorderCategoryGroupsDto,
   UpdateCategoryGroupDto,
 } from 'src/validation/category-group.schema';
 import { Equal, IsNull, Not, Repository } from 'typeorm';
@@ -217,5 +218,17 @@ export class CategoryGroupsService {
     await this.categoryGroupRepository.update(id, {
       ...dto,
     });
+  }
+
+  async reorderGroups(dto: ReorderCategoryGroupsDto) {
+    await this.categoryGroupRepository.manager.connection.transaction(
+      async (manager) => {
+        for (const group of dto.groups) {
+          await manager.getRepository(CategoryGroup).update(group.id, {
+            order: group.order,
+          });
+        }
+      },
+    );
   }
 }
