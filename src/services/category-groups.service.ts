@@ -9,7 +9,7 @@ import {
   CreateCategoryGroupDto,
   UpdateCategoryGroupDto,
 } from 'src/validation/category-group.schema';
-import { Equal, IsNull, Not, Repository } from 'typeorm';
+import { Equal, FindOptionsWhere, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class CategoryGroupsService {
@@ -43,18 +43,28 @@ export class CategoryGroupsService {
     await this.categoryGroupRepository.save(createNewCategoryGroup);
   }
 
-  async getGroupsWithCategories(id: string, user: User) {
+  async getGroupsWithCategories(
+    id: string,
+    withDefault: boolean = false,
+    user: User,
+  ) {
     const translateDefaultGroup = this.t.tCategories('Inflow', 'groups');
-    const categories = await this.categoryGroupRepository.find({
-      where: {
-        budget: {
-          id,
-          user: {
-            id: user.id,
-          },
+
+    const where: FindOptionsWhere<CategoryGroup> = {
+      budget: {
+        id,
+        user: {
+          id: user.id,
         },
-        name: Not(translateDefaultGroup),
       },
+    };
+
+    if (!withDefault) {
+      where.name = Not(translateDefaultGroup);
+    }
+
+    const categories = await this.categoryGroupRepository.find({
+      where,
       select: {
         id: true,
         name: true,
@@ -67,6 +77,9 @@ export class CategoryGroupsService {
         },
       },
       relations: ['categories'],
+      order: {
+        createdAt: 'ASC',
+      },
     });
 
     return categories;

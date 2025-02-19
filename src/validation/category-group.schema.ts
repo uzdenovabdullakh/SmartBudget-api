@@ -16,5 +16,10 @@ export const CreateCategoryGroupSchema = z
 export const UpdateCategoryGroupSchema =
   CreateCategoryGroupSchema.partial().pick({ name: true });
 
+export const GetCategoryGroupSchema = z.object({
+  default: z.coerce.boolean().optional(),
+});
+
 export type CreateCategoryGroupDto = z.infer<typeof CreateCategoryGroupSchema>;
 export type UpdateCategoryGroupDto = z.infer<typeof UpdateCategoryGroupSchema>;
+export type GetCategoryGroup = z.infer<typeof GetCategoryGroupSchema>;

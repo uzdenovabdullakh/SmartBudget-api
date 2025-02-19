@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
   UsePipes,
 } from '@nestjs/common';
@@ -17,6 +18,8 @@ import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
   CreateCategoryGroupDto,
   CreateCategoryGroupSchema,
+  GetCategoryGroup,
+  GetCategoryGroupSchema,
   UpdateCategoryGroupDto,
   UpdateCategoryGroupSchema,
 } from 'src/validation/category-group.schema';
@@ -39,11 +42,14 @@ export class CategoryGroupsController {
 
   @Get(':id')
   async getGroupsWithCategories(
+    @Query(new ZodValidationPipe(GetCategoryGroupSchema))
+    query: GetCategoryGroup,
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticationRequest,
   ) {
     return await this.categoryGroupsService.getGroupsWithCategories(
       id,
+      query.default,
       req.user,
     );
   }

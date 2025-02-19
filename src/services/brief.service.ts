@@ -23,6 +23,12 @@ export class BriefService {
       const categoryGroupRepository = manager.getRepository(CategoryGroup);
       const categoryRepository = manager.getRepository(Category);
 
+      await this.createDefaultCategory(
+        categoryGroupRepository,
+        categoryRepository,
+        user,
+      );
+
       const brief = await briefRepository.findOne({
         where: { user: { id: user.id } },
       });
@@ -91,12 +97,6 @@ export class BriefService {
           }
         }
       }
-
-      await this.createDefaultCategory(
-        categoryGroupRepository,
-        categoryRepository,
-        user,
-      );
     });
   }
 
