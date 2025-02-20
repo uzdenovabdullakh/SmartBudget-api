@@ -82,7 +82,7 @@ export class AccountsService {
           'a.id AS id',
           'a.name AS name',
           'a.type AS type',
-          'a.amount AS amount',
+          'a.amount::REAL AS amount',
           'a.created_at AS "createdAt"',
         ])
         .orderBy('a.created_at', order)
@@ -101,7 +101,7 @@ export class AccountsService {
     const getTotalBalance = async () => {
       const sumQueryBuilder = baseQueryBuilder
         .clone()
-        .select('SUM(a.amount)', 'totalBalance')
+        .select('SUM(a.amount)::REAL', 'totalBalance')
         .groupBy('b.settings');
 
       return sumQueryBuilder.getRawOne<{ totalBalance: number }>();
@@ -140,13 +140,8 @@ export class AccountsService {
       .innerJoin('a.budget', 'b')
       .where('a.id = :id', { id: id })
       .andWhere('b.user.id = :userId', { userId: user.id })
-      .select([
-        'a.id AS id',
-        'a.name AS name',
-        'a.type AS type',
-        'a.amount AS amount',
-      ])
-      .getRawOne<Omit<AccountDetails, 'createdAt'>>();
+      .select(['a.id', 'a.name', 'a.type', 'a.amount'])
+      .getOne();
 
     if (!account) {
       throw ApiException.notFound(this.t.tException('not_found', 'account'));
