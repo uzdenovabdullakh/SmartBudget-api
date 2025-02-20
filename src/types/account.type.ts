@@ -1,13 +1,13 @@
 export type AccountDetails = {
   id: string;
   name: string;
-  amount: string;
+  amount: number;
   type: string;
   createdAt: Date;
 };
 
 export type AccountsSummaryResponse = {
   accounts: AccountDetails[];
-  totalBalance: string;
+  totalBalance: number;
   totalPages: number;
 };
