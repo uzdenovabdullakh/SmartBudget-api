@@ -40,7 +40,7 @@ export class BudgetsService {
 
   async getUserBudgets(user: User) {
     return await this.budgetRepository.find({
-      select: ['id', 'name', 'createdAt'],
+      select: ['id', 'name', 'createdAt', 'settings'],
       where: {
         user: {
           id: user.id,
