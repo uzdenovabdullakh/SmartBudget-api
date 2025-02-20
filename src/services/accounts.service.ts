@@ -80,14 +80,9 @@ export class AccountsService {
         .clone()
         .select([
           'a.id AS id',
-          `a.name AS name`,
+          'a.name AS name',
           'a.type AS type',
-          `CASE
-            WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
-              CONCAT(b.settings ->> 'currency', a.amount)
-            ELSE
-              CONCAT(a.amount, b.settings ->> 'currency') END
-            AS amount`,
+          'a.amount AS amount',
           'a.created_at AS "createdAt"',
         ])
         .orderBy('a.created_at', order)
@@ -106,17 +101,10 @@ export class AccountsService {
     const getTotalBalance = async () => {
       const sumQueryBuilder = baseQueryBuilder
         .clone()
-        .select(
-          `CASE
-            WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
-              CONCAT(b.settings ->> 'currency', SUM(a.amount))
-            ELSE
-            CONCAT(SUM(a.amount), b.settings ->> 'currency') END`,
-          'totalBalance',
-        )
+        .select('SUM(a.amount)', 'totalBalance')
         .groupBy('b.settings');
 
-      return sumQueryBuilder.getRawOne<{ totalBalance: string }>();
+      return sumQueryBuilder.getRawOne<{ totalBalance: number }>();
     };
 
     const getTotalCount = async () => {
@@ -154,14 +142,9 @@ export class AccountsService {
       .andWhere('b.user.id = :userId', { userId: user.id })
       .select([
         'a.id AS id',
-        `a.name AS name`,
+        'a.name AS name',
         'a.type AS type',
-        `CASE
-          WHEN b.settings ->> 'currencyPlacement' = 'before' THEN
-            CONCAT(b.settings ->> 'currency', a.amount)
-          ELSE
-            CONCAT(a.amount, b.settings ->> 'currency') END
-          AS amount`,
+        'a.amount AS amount',
       ])
       .getRawOne<Omit<AccountDetails, 'createdAt'>>();
 
