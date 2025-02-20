@@ -122,10 +122,8 @@ export class TransactionsService {
     const {
       startDate,
       endDate,
-      inflow,
-      outflow,
-      category,
-      order = 'ASC',
+      orderBy,
+      order = 'DESC',
       page = 1,
       pageSize = 10,
       search = '',
@@ -149,12 +147,9 @@ export class TransactionsService {
       baseQueryBuilder.andWhere('transaction.date <= :endDate', {
         endDate: filter.endDate,
       });
-    if (category)
-      baseQueryBuilder.andWhere('transaction.category = :category', {
-        category: filter.category,
-      });
-    if (inflow) baseQueryBuilder.addOrderBy('transaction.inflow', order);
-    if (outflow) baseQueryBuilder.addOrderBy('transaction.outflow', order);
+    if (orderBy) {
+      baseQueryBuilder.addOrderBy(orderBy, order).addGroupBy(orderBy);
+    }
     if (search)
       baseQueryBuilder.andWhere(
         '(LOWER(transaction.description) LIKE :search)',
@@ -174,6 +169,7 @@ export class TransactionsService {
       ])
       .addSelect(['category.id', 'category.name'])
       .orderBy('transaction.date', order)
+      .groupBy('transaction.id, category.id')
       .offset(offset)
       .limit(pageSize);
     const transactions = await transactionsQueryBuilder.getMany();

@@ -28,12 +28,18 @@ export const GetTransactionsSchema = z
   .object({
     startDate: z.string().optional(),
     endDate: z.string().optional(),
-    category: z
-      .string()
-      .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' }))
-      .optional(),
-    inflow: z.boolean().optional(),
-    outflow: z.boolean().optional(),
+    orderBy: z
+      .enum(['inflow', 'outflow', 'category_name', 'date'])
+      .optional()
+      .transform((data) => {
+        if (!data) {
+          return data;
+        }
+        if (data === 'category_name') {
+          return 'category.name';
+        }
+        return `transaction.${data}`;
+      }),
   })
   .and(PaginationQuerySchema);
 
