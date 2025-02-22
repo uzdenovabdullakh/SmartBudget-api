@@ -17,6 +17,10 @@ import { TranslationService } from './translation.service';
 import { Account } from 'src/entities/account.entity';
 import { Category } from 'src/entities/category.entity';
 import { TransactionType } from 'src/constants/enums';
+import {
+  parseCSVToTransactions,
+  parseXLSXToTransactions,
+} from 'src/utils/helpers';
 
 @Injectable()
 export class TransactionsService {
@@ -70,26 +74,44 @@ export class TransactionsService {
     }
 
     const extension = file.originalname.split('.').pop();
-    let data: Transaction[];
+    let transactions: object[];
 
     if (extension === 'csv') {
-      data = parse(file.buffer.toString(), {
-        columns: true,
+      const rawData = parse(file.buffer.toString(), {
         skip_empty_lines: true,
+        quote: "'",
+        delimiter: ',',
+        relax_quotes: true,
+        relax_column_count: true,
       });
+
+      transactions = parseCSVToTransactions(rawData, this.t);
     } else if (extension === 'xlsx') {
       const workbook = XLSX.read(file.buffer, { type: 'buffer' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      data = XLSX.utils.sheet_to_json(sheet);
+      const rawData: any[] = XLSX.utils.sheet_to_json(sheet);
+
+      const trashData = rawData
+        .slice(0, 10)
+        .find((row) => Object.keys(row).some((val) => val.includes('__EMPTY')));
+      if (trashData) {
+        throw ApiException.conflictError(
+          this.t.tException(
+            'Transaction headers were not found. The xlsx or csv format may be incorrect, or the values may be garbage',
+          ),
+        );
+      }
+
+      transactions = parseXLSXToTransactions(rawData);
     }
 
-    const transactions = data.map((row) =>
+    const newTransactions = transactions.map((row) =>
       this.transactionRepository.create({
         ...row,
         account,
       }),
     );
-    await this.transactionRepository.save(transactions);
+    await this.transactionRepository.save(newTransactions, { chunk: 100 });
   }
 
   async exportTransactions(type: 'csv' | 'xlsx') {
