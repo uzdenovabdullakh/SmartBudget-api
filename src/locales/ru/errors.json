@@ -10,6 +10,7 @@
   "too_many_requests": "Слишком много запросов для этого действия. Пожалуйста, проверьте свою почту",
   "user_is_deleted": "Пользователь удален. Пожалуйста, восстановите свою учетную запись",
   "invalid_refresh_token": "Недействительный или просроченный токен обновления",
+  "Transaction headers were not found. The xlsx or csv format may be incorrect, or the values may be garbage": "Заголовки транзакций не найдены. Возможно неверный формат xlsx или csv, либо мусорные значения",
   "validation": {
     "Name too long": "Название слишком длинное",
     "Name is required": "Название обязательный параметр",

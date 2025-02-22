@@ -10,6 +10,7 @@
   "too_many_requests": "Too many requests for this action. Please check your email",
   "user_is_deleted": "User is deleted. Please restore your account",
   "invalid_refresh_token": "Invalid or expired refresh token",
+  "Transaction headers were not found. The xlsx or csv format may be incorrect, or the values may be garbage":  "Transaction headers were not found. The xlsx or csv format may be incorrect, or the values may be garbage",
   "validation": {
     "Name too long": "Name too long",
     "Name is required": "Name is required",
