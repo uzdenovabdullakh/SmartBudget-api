@@ -9,6 +9,7 @@ import {
 import { Timestamps } from './timestamps.entity';
 import { Category } from './category.entity';
 import { Period } from 'src/constants/enums';
+import { NumericTransformer } from 'src/utils/numeric-transformer';
 
 @Entity({ name: 'category_spending' })
 @Unique('uk_category_period', ['category', 'periodStart', 'periodEnd'])
@@ -22,6 +23,7 @@ export class CategorySpending extends Timestamps {
     precision: 10,
     scale: 2,
     name: 'spent_amount',
+    transformer: new NumericTransformer(),
   })
   spentAmount: number;
 
@@ -37,6 +39,7 @@ export class CategorySpending extends Timestamps {
     precision: 10,
     scale: 2,
     name: 'limit_amount',
+    transformer: new NumericTransformer(),
   })
   limitAmount: number;
 

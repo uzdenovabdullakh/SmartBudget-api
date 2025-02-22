@@ -47,9 +47,11 @@ export class GoalsService {
         const category = await categoryRepository.findOne({
           where: {
             id: categoryId,
-            budget: {
-              user: {
-                id: user.id,
+            group: {
+              budget: {
+                user: {
+                  id: user.id,
+                },
               },
             },
           },

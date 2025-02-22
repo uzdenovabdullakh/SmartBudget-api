@@ -1,13 +1,17 @@
 import i18next from 'i18next';
-import { TransactionType } from 'src/constants/enums';
 import { z } from 'src/utils/zod-map';
 import { PaginationQuerySchema } from './pagination.schema';
 
 const transactionSchema = z.object({
-  amount: z.coerce.number(),
-  type: z.nativeEnum(TransactionType),
-  description: z.string(),
+  inflow: z.coerce.number().optional().nullable(),
+  outflow: z.coerce.number().optional().nullable(),
+  description: z.string().nullable().optional(),
   date: z.string(),
+  category: z
+    .string()
+    .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' }))
+    .nullable()
+    .optional(),
   accountId: z
     .string()
     .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' })),
@@ -24,11 +28,18 @@ export const GetTransactionsSchema = z
   .object({
     startDate: z.string().optional(),
     endDate: z.string().optional(),
-    category: z
-      .string()
-      .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' }))
-      .optional(),
-    type: z.nativeEnum(TransactionType).optional(),
+    orderBy: z
+      .enum(['inflow', 'outflow', 'category_name', 'date'])
+      .optional()
+      .transform((data) => {
+        if (!data) {
+          return data;
+        }
+        if (data === 'category_name') {
+          return 'category.name';
+        }
+        return `transaction.${data}`;
+      }),
   })
   .and(PaginationQuerySchema);
 

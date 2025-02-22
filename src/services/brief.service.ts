@@ -23,6 +23,12 @@ export class BriefService {
       const categoryGroupRepository = manager.getRepository(CategoryGroup);
       const categoryRepository = manager.getRepository(Category);
 
+      await this.createDefaultCategory(
+        categoryGroupRepository,
+        categoryRepository,
+        user,
+      );
+
       const brief = await briefRepository.findOne({
         where: { user: { id: user.id } },
       });
@@ -55,12 +61,13 @@ export class BriefService {
         const translatedGroupName = this.t.tCategories(mapping.group, 'groups');
 
         let categoryGroup = await categoryGroupRepository.findOne({
-          where: { name: translatedGroupName },
+          where: { name: translatedGroupName, budget: user.budgets[0] },
         });
 
         if (!categoryGroup) {
           categoryGroup = categoryGroupRepository.create({
             name: translatedGroupName,
+            budget: user.budgets[0],
           });
           await categoryGroupRepository.save(categoryGroup);
         }
@@ -85,12 +92,55 @@ export class BriefService {
             category = categoryRepository.create({
               name: translatedCategoryName,
               group: categoryGroup,
-              budget: user.budgets[0],
             });
             await categoryRepository.save(category);
           }
         }
       }
     });
+  }
+
+  private async createDefaultCategory(
+    categoryGroupRepository: Repository<CategoryGroup>,
+    categoryRepository: Repository<Category>,
+    user: User,
+  ) {
+    const translatedGroupName = this.t.tCategories('Inflow', 'groups');
+
+    let categoryGroup = await categoryGroupRepository.findOne({
+      where: { name: translatedGroupName, budget: user.budgets[0] },
+    });
+
+    if (!categoryGroup) {
+      categoryGroup = categoryGroupRepository.create({
+        name: translatedGroupName,
+        budget: user.budgets[0],
+        order: 0,
+      });
+      await categoryGroupRepository.save(categoryGroup);
+    }
+
+    const translatedCategoryName = this.t.tCategories(
+      'Inflow: Ready to Assign',
+      'names',
+    );
+
+    let category = await categoryRepository.findOne({
+      where: {
+        name: translatedCategoryName,
+        group: { id: categoryGroup.id },
+      },
+      relations: ['group'],
+    });
+
+    if (!category) {
+      category = categoryRepository.create({
+        name: translatedCategoryName,
+        group: categoryGroup,
+        assigned: 0,
+        order: 0,
+      });
+      await categoryRepository.save(category);
+    }
   }
 }

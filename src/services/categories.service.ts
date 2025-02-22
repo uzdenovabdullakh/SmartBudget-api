@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TranslationService } from './translation.service';
-import { Budget } from 'src/entities/budget.entity';
 import { CategoryGroup } from 'src/entities/category-group.entity';
 import { CategorySpending } from 'src/entities/category-spending.entity';
 import { Category } from 'src/entities/category.entity';
@@ -9,8 +8,11 @@ import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { calculatePeriod } from 'src/utils/helpers';
 import {
+  AssigningChangeDto,
   CategoryLimitDto,
   CreateCategoryDto,
+  MoveAvaliableDto,
+  ReorderCategoriesDto,
   UpdateCategoryDto,
 } from 'src/validation/category.schema';
 import { Equal, In, Not, Repository } from 'typeorm';
@@ -22,47 +24,33 @@ export class CategoriesService {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(CategoryGroup)
     private readonly categoryGroupRepository: Repository<CategoryGroup>,
-    @InjectRepository(Budget)
-    private readonly budgetRepository: Repository<Budget>,
     @InjectRepository(CategorySpending)
     private readonly categorySpendingRepository: Repository<CategorySpending>,
     private readonly t: TranslationService,
   ) {}
 
   async createCategory(dto: CreateCategoryDto, user: User) {
-    const { name, groupId, budgetId } = dto;
+    const { name, groupId } = dto;
 
     const categoryGroup = await this.categoryGroupRepository.findOne({
       where: { id: groupId },
     });
-
     if (!categoryGroup) {
       throw ApiException.notFound(
         this.t.tException('not_found', 'category_group'),
       );
     }
 
-    const budget = await this.budgetRepository.findOne({
-      where: {
-        id: budgetId,
-        user: { id: user.id },
-      },
-      relations: ['user'],
-    });
-
-    if (!budget) {
-      throw ApiException.notFound(this.t.tException('not_found', 'budget'));
-    }
-
     const existingCategory = await this.categoryRepository.findOne({
       where: {
         name,
-        budget: { id: budgetId },
-        group: { id: groupId },
+        group: {
+          id: groupId,
+          budget: { user: { id: user.id } },
+        },
       },
-      relations: ['budget', 'group'],
+      relations: ['group', 'group.budget'],
     });
-
     if (existingCategory) {
       throw ApiException.conflictError(
         this.t.tException('already_exists', 'category'),
@@ -72,7 +60,6 @@ export class CategoriesService {
     const category = this.categoryRepository.create({
       name,
       group: categoryGroup,
-      budget: { id: budgetId },
     });
 
     await this.categoryRepository.save(category);
@@ -82,19 +69,15 @@ export class CategoriesService {
     const category = await this.categoryRepository.findOne({
       where: {
         id,
-        budget: {
-          user: {
-            id: user.id,
+        group: {
+          budget: {
+            user: {
+              id: user.id,
+            },
           },
         },
       },
-      select: {
-        group: {
-          id: true,
-          name: true,
-        },
-      },
-      relations: ['categorySpending', 'goal', 'group'],
+      relations: ['group', 'group.budget'],
     });
     if (!category) {
       throw ApiException.notFound(this.t.tException('not_found', 'category'));
@@ -104,42 +87,146 @@ export class CategoriesService {
   }
 
   async updateCategory(id: string, dto: UpdateCategoryDto, user: User) {
-    const { name } = dto;
     const category = await this.getCategory(id, user);
 
-    const categoryExist = await this.categoryRepository.findOne({
+    // Проверяем уникальность имени, если оно передано
+    if (dto.name) {
+      const categoryExist = await this.categoryRepository.findOne({
+        where: {
+          id: Not(id),
+          name: Equal(dto.name),
+          group: {
+            id: category.group.id,
+          },
+        },
+        withDeleted: true,
+      });
+
+      if (categoryExist) {
+        throw ApiException.badRequest(
+          this.t.tException('already_exists', 'category'),
+        );
+      }
+    }
+
+    const updateData: Partial<Category> = {};
+    if (dto.name) updateData.name = dto.name;
+    if (dto.groupId) updateData.group = { id: dto.groupId } as any;
+
+    if (Object.keys(updateData).length > 0) {
+      await this.categoryRepository.update({ id }, updateData);
+    }
+  }
+
+  async reorderCategories(dto: ReorderCategoriesDto) {
+    await this.categoryRepository.manager.connection.transaction(
+      async (manager) => {
+        for (const category of dto.categories) {
+          await manager.getRepository(Category).update(category.id, {
+            order: category.order,
+            group: { id: category.groupId },
+          });
+        }
+      },
+    );
+  }
+
+  async getDefaultCategory(budgetId: string, user: User) {
+    const translatedCategoryName = this.t.tCategories(
+      'Inflow: Ready to Assign',
+      'names',
+    );
+
+    const defaultCategory = await this.categoryRepository.findOne({
       where: {
-        id: Not(id),
-        name: Equal(name),
-        budget: {
-          id: category.budget.id,
-          user: {
-            id: user.id,
+        name: translatedCategoryName,
+        group: {
+          budget: {
+            id: budgetId,
+            user: {
+              id: user.id,
+            },
           },
         },
       },
-      withDeleted: true,
+      select: ['id', 'name', 'assigned', 'available', 'activity'],
     });
-    if (categoryExist) {
-      throw ApiException.notFound(
-        this.t.tException('already_exists', 'category'),
-      );
-    }
 
-    await this.categoryRepository.update(
-      {
-        id,
+    return defaultCategory;
+  }
+
+  async assigningChange(id: string, dto: AssigningChangeDto, user: User) {
+    await this.categoryRepository.manager.connection.transaction(
+      async (manager) => {
+        const categoryRepository = manager.getRepository(Category);
+
+        const category = await this.getCategory(id, user);
+
+        const newAmount = dto.assigned - category.assigned;
+
+        await categoryRepository.update(category.id, {
+          assigned: category.assigned + newAmount,
+          available: category.available + newAmount,
+        });
+
+        const defaultCategory = await this.getDefaultCategory(
+          category.group.budget.id,
+          user,
+        );
+
+        await categoryRepository.update(defaultCategory.id, {
+          available: defaultCategory.available - newAmount,
+        });
       },
-      {
-        name,
+    );
+  }
+
+  async moveAvailable(dto: MoveAvaliableDto, user: User) {
+    const { from, to, amount } = dto;
+    await this.categoryRepository.manager.connection.transaction(
+      async (manager) => {
+        const categoryRepository = manager.getRepository(Category);
+
+        const fromCategory = await this.getCategory(from, user);
+        const toCategory = await this.getCategory(to, user);
+
+        await categoryRepository.update(from, {
+          assigned: fromCategory.assigned - amount,
+          available: fromCategory.available - amount,
+        });
+
+        await categoryRepository.update(to, {
+          assigned: toCategory.assigned + amount,
+          available: toCategory.available + amount,
+        });
       },
     );
   }
 
   async removeCategory(id: string, user: User) {
-    await this.getCategory(id, user);
+    await this.categoryRepository.manager.connection.transaction(
+      async (manager) => {
+        const categoryRepository = manager.getRepository(Category);
 
-    await this.categoryRepository.softDelete(id);
+        const category = await this.getCategory(id, user);
+
+        const defaultCategory = await this.getDefaultCategory(
+          category.group.budget.id,
+          user,
+        );
+
+        await categoryRepository.update(defaultCategory.id, {
+          available: defaultCategory.available + category.available,
+        });
+
+        await categoryRepository.update(id, {
+          assigned: 0,
+          activity: 0,
+          available: 0,
+        });
+        await categoryRepository.softDelete(id);
+      },
+    );
   }
 
   async deleteForever(ids: string[], user: User) {
@@ -149,8 +236,10 @@ export class CategoriesService {
       const categories = await categoryRepository.find({
         where: {
           id: In(ids),
-          budget: {
-            user: { id: user.id },
+          group: {
+            budget: {
+              user: { id: user.id },
+            },
           },
         },
         withDeleted: true,
@@ -173,8 +262,10 @@ export class CategoriesService {
       const categories = await categoryRepository.find({
         where: {
           id: In(ids),
-          budget: {
-            user: { id: user.id },
+          group: {
+            budget: {
+              user: { id: user.id },
+            },
           },
         },
         withDeleted: true,

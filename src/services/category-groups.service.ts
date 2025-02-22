@@ -5,8 +5,12 @@ import { CategoryGroup } from 'src/entities/category-group.entity';
 import { Category } from 'src/entities/category.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
-import { CreateCategoryGroupDto } from 'src/validation/category-group.schema';
-import { IsNull, Not, Repository } from 'typeorm';
+import {
+  CreateCategoryGroupDto,
+  ReorderCategoryGroupsDto,
+  UpdateCategoryGroupDto,
+} from 'src/validation/category-group.schema';
+import { Equal, IsNull, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class CategoryGroupsService {
@@ -17,9 +21,13 @@ export class CategoryGroupsService {
   ) {}
 
   async createCategoryGroup(dto: CreateCategoryGroupDto) {
+    const { name, budgetId } = dto;
     const categoryGroupExist = await this.categoryGroupRepository.findOne({
       where: {
-        name: dto.name,
+        name,
+        budget: {
+          id: budgetId,
+        },
       },
       withDeleted: true,
     });
@@ -29,32 +37,49 @@ export class CategoryGroupsService {
       );
     }
 
-    const createNewCategoryGroup = this.categoryGroupRepository.create(dto);
+    const createNewCategoryGroup = this.categoryGroupRepository.create({
+      ...dto,
+      budget: { id: budgetId },
+    });
     await this.categoryGroupRepository.save(createNewCategoryGroup);
   }
 
-  async getCategoriesGroups(id: string, user: User) {
-    const categories = await this.categoryGroupRepository.find({
-      where: {
-        categories: {
-          budget: {
-            id,
-            user: {
-              id: user.id,
-            },
-          },
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        categories: {
-          id: true,
-          name: true,
-        },
-      },
-      relations: ['categories'],
-    });
+  async getGroupsWithCategories(
+    id: string,
+    withDefault: boolean = false,
+    user: User,
+  ) {
+    const translateDefaultGroup = this.t.tCategories('Inflow', 'groups');
+
+    const queryBuilder = this.categoryGroupRepository
+      .createQueryBuilder('categoryGroup')
+      .leftJoinAndSelect('categoryGroup.categories', 'categories')
+      .leftJoin('categoryGroup.budget', 'budget')
+      .leftJoin('budget.user', 'user')
+      .where('budget.id = :id', { id })
+      .andWhere('user.id = :userId', { userId: user.id })
+      .select([
+        'categoryGroup.id',
+        'categoryGroup.name',
+        'categoryGroup.order',
+        'categories.id',
+        'categories.name',
+        'categories.available',
+        'categories.assigned',
+        'categories.activity',
+        'categories.order',
+      ])
+      .orderBy('categoryGroup.order', 'ASC')
+      .addOrderBy('categoryGroup.createdAt', 'ASC')
+      .addOrderBy('categories.order', 'ASC');
+
+    if (!withDefault) {
+      queryBuilder.andWhere('categoryGroup.name != :translateDefaultGroup', {
+        translateDefaultGroup,
+      });
+    }
+
+    const categories = await queryBuilder.getMany();
 
     return categories;
   }
@@ -63,24 +88,22 @@ export class CategoryGroupsService {
     const categories = await this.categoryGroupRepository.find({
       where: {
         deletedAt: Not(IsNull()),
-        categories: {
-          budget: {
-            user: {
-              id: user.id,
-            },
+        budget: {
+          user: {
+            id: user.id,
           },
         },
       },
       select: {
         id: true,
         name: true,
+        budget: {
+          id: true,
+          name: true,
+        },
         categories: {
           id: true,
           name: true,
-          budget: {
-            id: true,
-            name: true,
-          },
         },
       },
       relations: ['categories'],
@@ -98,11 +121,9 @@ export class CategoryGroupsService {
       const categoryGroupExist = await categoryGroupRepository.findOne({
         where: {
           id,
-          categories: {
-            budget: {
-              user: {
-                id: user.id,
-              },
+          budget: {
+            user: {
+              id: user.id,
             },
           },
         },
@@ -115,10 +136,8 @@ export class CategoryGroupsService {
         );
       }
 
-      await categoryGroupRepository.softDelete(id);
-      await categoryRepository.softDelete(
-        categoryGroupExist.categories.map((c) => c.id),
-      );
+      await categoryGroupRepository.softRemove(categoryGroupExist);
+      await categoryRepository.softRemove(categoryGroupExist.categories);
     });
   }
 
@@ -130,11 +149,9 @@ export class CategoryGroupsService {
       const categoryGroupExist = await categoryGroupRepository.findOne({
         where: {
           id,
-          categories: {
-            budget: {
-              user: {
-                id: user.id,
-              },
+          budget: {
+            user: {
+              id: user.id,
             },
           },
         },
@@ -149,9 +166,69 @@ export class CategoryGroupsService {
       }
 
       await categoryGroupRepository.restore(id);
-      await categoryRepository.restore(
-        categoryGroupExist.categories.map((c) => c.id),
-      );
+      await categoryRepository.recover(categoryGroupExist.categories);
     });
+  }
+
+  async getCategoryGroup(id: string, user: User) {
+    const categoryGroupExist = await this.categoryGroupRepository.findOne({
+      where: {
+        id,
+        budget: {
+          user: {
+            id: user.id,
+          },
+        },
+      },
+      relations: ['budget'],
+    });
+
+    if (!categoryGroupExist) {
+      throw ApiException.notFound(
+        this.t.tException('not_found', 'category_group'),
+      );
+    }
+
+    return categoryGroupExist;
+  }
+
+  async updateCategoryGroup(
+    id: string,
+    dto: UpdateCategoryGroupDto,
+    user: User,
+  ) {
+    const categoryGroup = await this.getCategoryGroup(id, user);
+
+    const categoryGroupExist = await this.categoryGroupRepository.findOne({
+      where: {
+        id: Not(id),
+        name: Equal(dto.name),
+        budget: {
+          id: categoryGroup.budget.id,
+        },
+      },
+      withDeleted: true,
+    });
+    if (categoryGroupExist) {
+      throw ApiException.badRequest(
+        this.t.tException('already_exists', 'categoryGroupExist'),
+      );
+    }
+
+    await this.categoryGroupRepository.update(id, {
+      ...dto,
+    });
+  }
+
+  async reorderGroups(dto: ReorderCategoryGroupsDto) {
+    await this.categoryGroupRepository.manager.connection.transaction(
+      async (manager) => {
+        for (const group of dto.groups) {
+          await manager.getRepository(CategoryGroup).update(group.id, {
+            order: group.order,
+          });
+        }
+      },
+    );
   }
 }
