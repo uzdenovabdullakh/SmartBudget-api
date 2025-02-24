@@ -17,6 +17,7 @@ import { LocalizationModule } from './modules/i18n.module';
 import { I18nInterceptor } from './interceptors/i18n.interceptor';
 import { HttpExceptionFilter } from './exceptions/exception.filter';
 import { TransactionsModule } from './modules/transactions.module';
+import { AnalyticModule } from './modules/analytic.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { TransactionsModule } from './modules/transactions.module';
     GoalsModule,
     BriefModule,
     TransactionsModule,
+    AnalyticModule,
   ],
   providers: [
     Logger,
