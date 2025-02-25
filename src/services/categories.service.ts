@@ -224,7 +224,7 @@ export class CategoriesService {
           activity: 0,
           available: 0,
         });
-        await categoryRepository.softDelete(id);
+        await categoryRepository.delete(id);
       },
     );
   }

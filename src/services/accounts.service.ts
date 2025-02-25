@@ -177,7 +177,7 @@ export class AccountsService {
       throw ApiException.notFound(this.t.tException('not_found', 'account'));
     }
 
-    await this.accountRepository.softRemove(account);
+    await this.accountRepository.remove(account);
   }
 
   async deleteForever(ids: string[], user: User) {

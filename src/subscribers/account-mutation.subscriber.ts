@@ -21,7 +21,7 @@ export class AccountSubscriber implements EntitySubscriberInterface<Account> {
     await this.updateAccountAndCategory(entity, manager);
   }
 
-  async afterSoftRemove(event: RemoveEvent<Account>) {
+  async afterRemove(event: RemoveEvent<Account>) {
     const { entity, manager } = event;
     await this.updateAccountAndCategory(entity, manager, true);
   }

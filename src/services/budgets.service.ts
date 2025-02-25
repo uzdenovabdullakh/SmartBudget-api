@@ -111,7 +111,7 @@ export class BudgetsService {
   async deleteBudget(id: string, user: User) {
     await this.getUserBudget(id, user);
 
-    await this.budgetRepository.softDelete({
+    await this.budgetRepository.delete({
       id,
       user,
     });

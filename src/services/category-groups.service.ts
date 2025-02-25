@@ -136,8 +136,8 @@ export class CategoryGroupsService {
         );
       }
 
-      await categoryGroupRepository.softRemove(categoryGroupExist);
-      await categoryRepository.softRemove(categoryGroupExist.categories);
+      await categoryGroupRepository.remove(categoryGroupExist);
+      await categoryRepository.remove(categoryGroupExist.categories);
     });
   }
 
