@@ -56,11 +56,6 @@ export class CategoryGroupsController {
     );
   }
 
-  @Get('removed')
-  async getRemovedCategoriesGroup(@Req() req: AuthenticationRequest) {
-    return await this.categoryGroupsService.getRemovedCategoriesGroup(req.user);
-  }
-
   @Delete(':id')
   async removeCategoryGroup(
     @Param('id', ParseUUIDPipe) id: string,
@@ -69,17 +64,6 @@ export class CategoryGroupsController {
     await this.categoryGroupsService.removeCategoryGroup(id, req.user);
     return {
       message: this.t.tMessage('removed', 'category_group'),
-    };
-  }
-
-  @Post('restore:id')
-  async restoreCategoryGroup(
-    @Param('id', ParseUUIDPipe) id: string,
-    @Req() req: AuthenticationRequest,
-  ) {
-    await this.categoryGroupsService.restoreCategoryGroup(id, req.user);
-    return {
-      message: this.t.tMessage('restored', 'category'),
     };
   }
 

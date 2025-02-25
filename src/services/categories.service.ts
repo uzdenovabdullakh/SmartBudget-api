@@ -15,7 +15,7 @@ import {
   ReorderCategoriesDto,
   UpdateCategoryDto,
 } from 'src/validation/category.schema';
-import { Equal, In, Not, Repository } from 'typeorm';
+import { Equal, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class CategoriesService {
@@ -227,58 +227,6 @@ export class CategoriesService {
         await categoryRepository.delete(id);
       },
     );
-  }
-
-  async deleteForever(ids: string[], user: User) {
-    await this.categoryRepository.manager.transaction(async (manager) => {
-      const categoryRepository = manager.getRepository(Category);
-
-      const categories = await categoryRepository.find({
-        where: {
-          id: In(ids),
-          group: {
-            budget: {
-              user: { id: user.id },
-            },
-          },
-        },
-        withDeleted: true,
-      });
-
-      const foundIds = categories.map((category) => category.id);
-      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-      if (notFoundIds.length > 0) {
-        throw ApiException.notFound(this.t.tException('not_found', 'category'));
-      }
-
-      await categoryRepository.delete(ids);
-    });
-  }
-
-  async restoreCategories(ids: string[], user: User) {
-    await this.categoryRepository.manager.transaction(async (manager) => {
-      const categoryRepository = manager.getRepository(Category);
-
-      const categories = await categoryRepository.find({
-        where: {
-          id: In(ids),
-          group: {
-            budget: {
-              user: { id: user.id },
-            },
-          },
-        },
-        withDeleted: true,
-      });
-
-      const foundIds = categories.map((category) => category.id);
-      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-      if (notFoundIds.length > 0) {
-        throw ApiException.notFound(this.t.tException('not_found', 'category'));
-      }
-
-      await categoryRepository.restore(ids);
-    });
   }
 
   async setCategoryLimit(id: string, dto: CategoryLimitDto, user: User) {

@@ -10,7 +10,7 @@ import {
   ReorderCategoryGroupsDto,
   UpdateCategoryGroupDto,
 } from 'src/validation/category-group.schema';
-import { Equal, IsNull, Not, Repository } from 'typeorm';
+import { Equal, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class CategoryGroupsService {
@@ -84,35 +84,6 @@ export class CategoryGroupsService {
     return categories;
   }
 
-  async getRemovedCategoriesGroup(user: User) {
-    const categories = await this.categoryGroupRepository.find({
-      where: {
-        deletedAt: Not(IsNull()),
-        budget: {
-          user: {
-            id: user.id,
-          },
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        budget: {
-          id: true,
-          name: true,
-        },
-        categories: {
-          id: true,
-          name: true,
-        },
-      },
-      relations: ['categories'],
-      withDeleted: true,
-    });
-
-    return categories;
-  }
-
   async removeCategoryGroup(id: string, user: User) {
     await this.categoryGroupRepository.manager.transaction(async (manager) => {
       const categoryGroupRepository = manager.getRepository(CategoryGroup);
@@ -138,35 +109,6 @@ export class CategoryGroupsService {
 
       await categoryGroupRepository.remove(categoryGroupExist);
       await categoryRepository.remove(categoryGroupExist.categories);
-    });
-  }
-
-  async restoreCategoryGroup(id: string, user: User) {
-    await this.categoryGroupRepository.manager.transaction(async (manager) => {
-      const categoryGroupRepository = manager.getRepository(CategoryGroup);
-      const categoryRepository = manager.getRepository(Category);
-
-      const categoryGroupExist = await categoryGroupRepository.findOne({
-        where: {
-          id,
-          budget: {
-            user: {
-              id: user.id,
-            },
-          },
-        },
-        relations: ['categories'],
-        withDeleted: true,
-      });
-
-      if (!categoryGroupExist) {
-        throw ApiException.notFound(
-          this.t.tException('not_found', 'category_group'),
-        );
-      }
-
-      await categoryGroupRepository.restore(id);
-      await categoryRepository.recover(categoryGroupExist.categories);
     });
   }
 

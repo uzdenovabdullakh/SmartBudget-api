@@ -9,13 +9,11 @@ import {
   Query,
   UploadedFile,
   UseInterceptors,
-  Res,
   ParseUUIDPipe,
   Req,
   UsePipes,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Response } from 'express';
 import { UploadTransactionsValidationPipe } from 'src/pipes/upload-transactions-validation.pipe';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { TransactionsService } from 'src/services/transactions.service';
@@ -25,8 +23,6 @@ import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
 import {
   CreateTransactionDto,
   CreateTransactionSchema,
-  ExportTypeQuery,
-  ExportTypeSchema,
   GetTransactionsQuery,
   GetTransactionsSchema,
   UpdateTransactionDto,
@@ -65,31 +61,6 @@ export class TransactionsController {
     return {
       message: this.t.tMessage('imported', 'transaction_plural'),
     };
-  }
-
-  @Get('export')
-  async exportTransactions(
-    @Query(new ZodValidationPipe(ExportTypeSchema)) query: ExportTypeQuery,
-    @Res() res: Response,
-  ) {
-    const buffer = await this.transactionsService.exportTransactions(
-      query.type,
-    );
-
-    const responseHeaders = {
-      csv: {
-        'Content-Type': 'text/csv',
-        'Content-Disposition': 'attachment; filename="transactions.csv"',
-      },
-      xlsx: {
-        'Content-Type':
-          'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="transactions.xlsx"',
-      },
-    };
-
-    res.set(responseHeaders[query.type]);
-    res.send(buffer);
   }
 
   @Get(':id')

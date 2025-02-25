@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Equal, In, Or, Repository } from 'typeorm';
 import { parse } from 'csv-parse/sync';
 import * as XLSX from 'xlsx';
-import { stringify } from 'csv-stringify/sync';
 import {
   CreateTransactionDto,
   GetTransactionsQuery,
@@ -112,32 +111,6 @@ export class TransactionsService {
       }),
     );
     await this.transactionRepository.save(newTransactions, { chunk: 100 });
-  }
-
-  async exportTransactions(type: 'csv' | 'xlsx') {
-    const transactions = await this.transactionRepository.find();
-    const data = transactions.map((t: Transaction) => ({
-      id: t.id,
-      inflow: t.inflow,
-      outflow: t.outflow,
-      category: t.category?.name || null,
-      description: t.description,
-      date: t.date.toISOString(),
-    }));
-
-    if (type == 'csv') {
-      return Buffer.from(stringify(data, { header: true }));
-    }
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
-
-    const xlsxBuffer = XLSX.write(workbook, {
-      bookType: 'xlsx',
-      type: 'buffer',
-    });
-    return Buffer.from(xlsxBuffer);
   }
 
   async getTransactions(id: string, filter: GetTransactionsQuery, user: User) {

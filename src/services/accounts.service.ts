@@ -13,7 +13,7 @@ import {
   UpdateAccountDto,
 } from 'src/validation/account.schema';
 import { PaginationQueryDto } from 'src/validation/pagination.schema';
-import { Equal, In, IsNull, Not, Repository } from 'typeorm';
+import { Equal, Not, Repository } from 'typeorm';
 
 @Injectable()
 export class AccountsService {
@@ -149,17 +149,6 @@ export class AccountsService {
     return account;
   }
 
-  async getRemovedAccounts(user: User) {
-    return await this.accountRepository
-      .createQueryBuilder('account')
-      .withDeleted()
-      .innerJoin('account.budget', 'budget')
-      .where('budget.user.id = :userId', { userId: user.id })
-      .andWhere('account.deletedAt IS NOT NULL')
-      .select(['account.id', 'account.name'])
-      .getMany();
-  }
-
   async deleteAccount(id: string, user: User) {
     const account = await this.accountRepository.findOne({
       where: {
@@ -178,62 +167,6 @@ export class AccountsService {
     }
 
     await this.accountRepository.remove(account);
-  }
-
-  async deleteForever(ids: string[], user: User) {
-    await this.accountRepository.manager.transaction(async (manager) => {
-      const accountRepository = manager.getRepository(Account);
-
-      const accounts = await accountRepository.find({
-        where: {
-          id: In(ids),
-          deletedAt: Not(IsNull()),
-          budget: {
-            user: {
-              id: user.id,
-            },
-          },
-        },
-        withDeleted: true,
-        relations: ['budget', 'budget.user'],
-      });
-
-      const foundIds = accounts.map((account) => account.id);
-      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-      if (notFoundIds.length > 0) {
-        throw ApiException.notFound(this.t.tException('not_found', 'account'));
-      }
-
-      await accountRepository.remove(accounts);
-    });
-  }
-
-  async restoreAccounts(ids: string[], user: User) {
-    await this.accountRepository.manager.transaction(async (manager) => {
-      const accountRepository = manager.getRepository(Account);
-
-      const accounts = await accountRepository.find({
-        where: {
-          id: In(ids),
-          deletedAt: Not(IsNull()),
-          budget: {
-            user: {
-              id: user.id,
-            },
-          },
-        },
-        withDeleted: true,
-        relations: ['budget', 'budget.user'],
-      });
-
-      const foundIds = accounts.map((account) => account.id);
-      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-      if (notFoundIds.length > 0) {
-        throw ApiException.notFound(this.t.tException('not_found', 'account'));
-      }
-
-      await accountRepository.recover(accounts);
-    });
   }
 
   async updateAccount(id: string, dto: UpdateAccountDto, user: User) {
