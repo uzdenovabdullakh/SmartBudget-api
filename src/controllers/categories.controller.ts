@@ -18,8 +18,6 @@ import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
   AssigningChangeDto,
   AssigningChangeSchema,
-  CategoryLimitDto,
-  CategoryLimitSchema,
   CreateCategoryDto,
   CreateCategorySchema,
   MoveAvaliableDto,
@@ -110,18 +108,6 @@ export class CategoriesController {
     await this.categoriesService.removeCategory(id, req.user);
     return {
       message: this.t.tMessage('removed', 'category'),
-    };
-  }
-
-  @Post('category-limit/:id')
-  async setCategoryLimit(
-    @Req() req: AuthenticationRequest,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body(new ZodValidationPipe(CategoryLimitSchema)) dto: CategoryLimitDto,
-  ) {
-    await this.categoriesService.setCategoryLimit(id, dto, req.user);
-    return {
-      message: this.t.tMessage('created', 'category_limit'),
     };
   }
 }
