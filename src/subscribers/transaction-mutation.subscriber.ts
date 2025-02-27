@@ -11,6 +11,7 @@ import { Transaction } from 'src/entities/transaction.entity';
 import { Account } from 'src/entities/account.entity';
 import { Category } from 'src/entities/category.entity';
 import { TransactionType } from 'src/constants/enums';
+import { CategorySpending } from 'src/entities/category-spending.entity';
 
 @EventSubscriber()
 export class TransactionSubscriber
@@ -38,6 +39,8 @@ export class TransactionSubscriber
     await manager.connection.transaction(async (manager) => {
       const accountRepository = manager.getRepository(Account);
       const categoryRepository = manager.getRepository(Category);
+      const categorySpendingRepository =
+        manager.getRepository(CategorySpending);
 
       const account = await accountRepository.findOne({
         where: { id: transaction.account.id },
@@ -94,6 +97,7 @@ export class TransactionSubscriber
       if (transaction.category) {
         const categoryEntity = await categoryRepository.findOne({
           where: { id: transaction.category.id },
+          relations: ['categorySpending'],
         });
 
         await categoryRepository.update(
@@ -109,6 +113,16 @@ export class TransactionSubscriber
                 : categoryEntity.activity - amount,
           },
         );
+
+        if (
+          categoryEntity.categorySpending &&
+          type === TransactionType.EXPENSE
+        ) {
+          const { categorySpending } = categoryEntity;
+          await categorySpendingRepository.update(categorySpending.id, {
+            spentAmount: categorySpending.spentAmount + amount,
+          });
+        }
       }
     });
   }

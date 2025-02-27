@@ -54,6 +54,7 @@ export class CategoryGroupsService {
     const queryBuilder = this.categoryGroupRepository
       .createQueryBuilder('categoryGroup')
       .leftJoinAndSelect('categoryGroup.categories', 'categories')
+      .leftJoinAndSelect('categories.categorySpending', 'categoryLimit')
       .leftJoin('categoryGroup.budget', 'budget')
       .leftJoin('budget.user', 'user')
       .where('budget.id = :id', { id })
@@ -68,6 +69,8 @@ export class CategoryGroupsService {
         'categories.assigned',
         'categories.activity',
         'categories.order',
+        'categoryLimit.limitAmount',
+        'categoryLimit.spentAmount',
       ])
       .orderBy('categoryGroup.order', 'ASC')
       .addOrderBy('categoryGroup.createdAt', 'ASC')
