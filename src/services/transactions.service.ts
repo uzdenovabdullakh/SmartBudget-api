@@ -20,6 +20,7 @@ import {
   parseCSVToTransactions,
   parseXLSXToTransactions,
 } from 'src/utils/helpers';
+import { CategorySpending } from 'src/entities/category-spending.entity';
 
 @Injectable()
 export class TransactionsService {
@@ -195,7 +196,12 @@ export class TransactionsService {
         },
       },
       select: ['id', 'inflow', 'outflow'],
-      relations: ['account', 'category', 'account.budget'],
+      relations: [
+        'account',
+        'category',
+        'account.budget',
+        'category.categorySpending',
+      ],
     });
 
     if (!transaction) {
@@ -260,6 +266,8 @@ export class TransactionsService {
       async (manager) => {
         const accountRepository = manager.getRepository(Account);
         const categoryRepository = manager.getRepository(Category);
+        const categorySpendingRepository =
+          manager.getRepository(CategorySpending);
 
         const currentType = currentTransaction.inflow
           ? TransactionType.INCOME
@@ -272,12 +280,12 @@ export class TransactionsService {
           : TransactionType.EXPENSE;
         const newAmount = newTransaction.inflow || newTransaction.outflow || 0;
 
-        const amountImpact = this.calculateAmountImpact(
+        const amountImpact = this.calculateAmountImpact({
           currentAmount,
           currentType,
           newAmount,
           newType,
-        );
+        });
 
         await this.updateAccount(
           accountRepository,
@@ -294,33 +302,44 @@ export class TransactionsService {
         }
 
         if (this.hasCategoryChanged(currentTransaction, newTransaction)) {
-          await this.updateCategory(
+          await this.updateCategory({
             categoryRepository,
-            currentTransaction.category,
-            -amountImpact,
-          );
-          await this.updateCategory(
+            category: currentTransaction.category,
+            amountImpact: -currentAmount,
+            categorySpendingRepository,
+            type: currentType,
+          });
+          await this.updateCategory({
             categoryRepository,
-            newTransaction.category,
-            amountImpact,
-          );
+            category: newTransaction.category,
+            amountImpact: newAmount,
+            categorySpendingRepository,
+            type: newType,
+          });
         } else if (newTransaction.category) {
-          await this.updateCategory(
+          await this.updateCategory({
             categoryRepository,
-            newTransaction.category,
+            category: newTransaction.category,
             amountImpact,
-          );
+            categorySpendingRepository,
+            type: newType,
+          });
         }
       },
     );
   }
 
-  private calculateAmountImpact(
-    currentAmount: number,
-    currentType: TransactionType,
-    newAmount: number,
-    newType: TransactionType,
-  ): number {
+  private calculateAmountImpact({
+    currentAmount,
+    currentType,
+    newAmount,
+    newType,
+  }: {
+    currentAmount: number;
+    currentType: TransactionType;
+    newAmount: number;
+    newType: TransactionType;
+  }): number {
     let amountImpact = newAmount - currentAmount;
     if (newType !== currentType) {
       amountImpact =
@@ -350,11 +369,19 @@ export class TransactionsService {
     return currentTransaction.category?.id !== newTransaction.category?.id;
   }
 
-  private async updateCategory(
-    categoryRepository: Repository<Category>,
-    category: Category,
-    amountImpact: number,
-  ) {
+  private async updateCategory({
+    categoryRepository,
+    category,
+    amountImpact,
+    categorySpendingRepository,
+    type,
+  }: {
+    categoryRepository: Repository<Category>;
+    category: Category;
+    amountImpact: number;
+    categorySpendingRepository?: Repository<CategorySpending>;
+    type?: TransactionType;
+  }) {
     if (!category) return;
     await categoryRepository.update(
       { id: category.id },
@@ -363,6 +390,13 @@ export class TransactionsService {
         activity: category.activity + amountImpact,
       },
     );
+
+    if (category.categorySpending && type === TransactionType.EXPENSE) {
+      const { categorySpending } = category;
+      await categorySpendingRepository.update(categorySpending.id, {
+        spentAmount: categorySpending.spentAmount + amountImpact,
+      });
+    }
   }
 
   private async updateDefaultCategory(
@@ -384,10 +418,10 @@ export class TransactionsService {
       },
     });
 
-    await this.updateCategory(
+    await this.updateCategory({
       categoryRepository,
-      defaultCategory,
+      category: defaultCategory,
       amountImpact,
-    );
+    });
   }
 }
