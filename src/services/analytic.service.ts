@@ -60,10 +60,7 @@ export class AnalyticService {
       .innerJoin('transaction.account', 'account')
       .innerJoin('account.budget', 'budget')
       .where('budget.user_id = :userId', { userId: user.id })
-      .andWhere('budget.id = :budgetId', { budgetId })
-      .andWhere('category.name != :defaultName', {
-        defaultName: this.t.tCategories('Inflow: Ready to Assign', 'names'),
-      });
+      .andWhere('budget.id = :budgetId', { budgetId });
 
     if (type === 'expense') {
       queryBuilder.andWhere('transaction.outflow > 0');
