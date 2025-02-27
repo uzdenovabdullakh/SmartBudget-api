@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Analytic } from 'src/entities/analytic.entity';
-import { AskDto } from 'src/validation/ai.schema';
+import { ProvideFinancialAdviceDto } from 'src/validation/ai.schema';
 import { Repository } from 'typeorm';
 import { TranslationService } from './translation.service';
 import { Transaction } from 'src/entities/transaction.entity';
@@ -28,7 +28,7 @@ export class AIService {
     );
   }
 
-  async provideFinancialAdvice(dto: AskDto) {
+  async provideFinancialAdvice(dto: ProvideFinancialAdviceDto) {
     const { message, budgetId } = dto;
 
     const predefinedQuestions = {
