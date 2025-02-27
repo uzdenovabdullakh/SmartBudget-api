@@ -7,7 +7,6 @@ import {
 } from 'typeorm';
 import { Timestamps } from './timestamps.entity';
 import { Budget } from './budget.entity';
-import { AnalyticsPredictionType } from 'src/constants/enums';
 
 @Entity({ name: 'analytics' })
 export class Analytic extends Timestamps {
@@ -15,20 +14,11 @@ export class Analytic extends Timestamps {
   id: string;
 
   @Column({
-    type: 'enum',
-    enum: AnalyticsPredictionType,
-    enumName: 'enum_analytics_prediction_type',
-    nullable: false,
-    name: 'prediction_type',
-  })
-  predictionType: AnalyticsPredictionType;
-
-  @Column({
     nullable: false,
     type: 'jsonb',
-    name: 'prediction_data',
+    name: 'conversation_history',
   })
-  predictionData: object;
+  conversationHistory: Array<{ role: string; content: string }>;
 
   @ManyToOne(() => Budget, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
@@ -39,12 +29,10 @@ export class Analytic extends Timestamps {
 
   constructor(
     budget: Budget,
-    predictionType: AnalyticsPredictionType,
-    predictionData: object,
+    conversationHistory: Array<{ role: string; content: string }>,
   ) {
     super();
     this.budget = budget;
-    this.predictionData = predictionData;
-    this.predictionType = predictionType;
+    this.conversationHistory = conversationHistory;
   }
 }
