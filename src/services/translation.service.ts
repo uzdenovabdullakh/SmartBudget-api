@@ -28,4 +28,10 @@ export class TranslationService {
 
     return this.i18n.t(`categories.${type}.${key}`, { lang });
   }
+
+  public tPrompts(key: string) {
+    const lang = I18nContext.current().lang;
+
+    return this.i18n.t(`prompts.${key}`, { lang });
+  }
 }
