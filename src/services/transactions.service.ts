@@ -21,6 +21,7 @@ import {
   parseCSVToTransactions,
   parseXLSXToTransactions,
 } from 'src/utils/helpers';
+import { TransactionWithCategory } from 'src/types/transactions.type';
 
 @Injectable()
 export class TransactionsService {
@@ -194,7 +195,8 @@ export class TransactionsService {
       .groupBy('transaction.id, category.id')
       .offset(offset)
       .limit(pageSize);
-    const transactions = await transactionsQueryBuilder.getMany();
+    const transactions: TransactionWithCategory[] =
+      await transactionsQueryBuilder.getMany();
 
     const countQueryBuilder = baseQueryBuilder
       .clone()
