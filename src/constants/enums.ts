@@ -12,12 +12,6 @@ export enum AccountType {
   BANK = 'bank',
 }
 
-export enum AnalyticsPredictionType {
-  EXPENSES = 'expenses',
-  INCOME = 'income',
-  CATEGORY_DISTRIBUTION = 'category_distribution',
-}
-
 export enum Period {
   DAILY = 'daily',
   WEEKLY = 'weekly',

@@ -18,6 +18,7 @@ import { I18nInterceptor } from './interceptors/i18n.interceptor';
 import { HttpExceptionFilter } from './exceptions/exception.filter';
 import { TransactionsModule } from './modules/transactions.module';
 import { AnalyticModule } from './modules/analytic.module';
+import { AiModule } from './modules/ai.module';
 
 @Module({
   imports: [
@@ -39,6 +40,7 @@ import { AnalyticModule } from './modules/analytic.module';
     BriefModule,
     TransactionsModule,
     AnalyticModule,
+    AiModule,
   ],
   providers: [
     Logger,
