@@ -18,7 +18,7 @@ export class Analytic extends Timestamps {
     type: 'jsonb',
     name: 'conversation_history',
   })
-  conversationHistory: Array<{ role: string; content: string }>;
+  conversationHistory: Array<{ id: string; role: string; content: string }>;
 
   @ManyToOne(() => Budget, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
@@ -29,7 +29,7 @@ export class Analytic extends Timestamps {
 
   constructor(
     budget: Budget,
-    conversationHistory: Array<{ role: string; content: string }>,
+    conversationHistory: Array<{ id: string; role: string; content: string }>,
   ) {
     super();
     this.budget = budget;

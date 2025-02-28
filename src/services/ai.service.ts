@@ -10,6 +10,7 @@ import { Transaction } from 'src/entities/transaction.entity';
 import { TransactionType } from 'src/constants/enums';
 import { I18nContext } from 'nestjs-i18n';
 import { TransactionWithCategory } from 'src/types/transactions.type';
+import { nanoid } from 'nanoid';
 
 @Injectable()
 export class AIService {
@@ -66,13 +67,27 @@ export class AIService {
     return advisorResponse;
   }
 
-  async getConversationHistory(budgetId: string) {
+  async getConversationHistory(
+    budgetId: string,
+    page: number = 1,
+    limit: number = 10,
+  ) {
     const latestAnalytic = await this.analyticsRepository.findOne({
       where: { budget: { id: budgetId } },
       order: { createdAt: 'DESC' },
     });
 
-    return latestAnalytic ? latestAnalytic.conversationHistory : [];
+    if (!latestAnalytic) {
+      return [];
+    }
+
+    const conversationHistory = latestAnalytic.conversationHistory;
+
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedHistory = conversationHistory.slice(startIndex, endIndex);
+
+    return paginatedHistory;
   }
 
   private async generateAdvisorResponse(
@@ -85,6 +100,7 @@ export class AIService {
     const conversationHistory = await this.getConversationHistory(budgetId);
 
     conversationHistory.push({
+      id: nanoid(),
       role: 'user',
       content: userMessage,
     });
@@ -94,7 +110,7 @@ export class AIService {
     )} `;
 
     const modelResponse = await this.hfInference.chatCompletion({
-      model: 'meta-llama/Llama-3.1-8B-Instruct',
+      model: 'meta-llama/Llama-3.3-70B-Instruct',
       messages: [
         {
           role: 'system',
@@ -110,18 +126,41 @@ export class AIService {
 
     const advisorMessage = modelResponse.choices[0].message.content;
 
-    conversationHistory.push({
+    const newConversation = {
+      id: nanoid(),
       role: 'assistant',
       content: advisorMessage,
+    };
+
+    conversationHistory.push(newConversation);
+
+    await this.saveConversation(conversationHistory, budgetId);
+
+    return newConversation;
+  }
+
+  private async saveConversation(
+    conversationHistory: {
+      id: string;
+      role: string;
+      content: string;
+    }[],
+    budgetId: string,
+  ) {
+    let analytic = await this.analyticsRepository.findOne({
+      where: { budget: { id: budgetId } },
     });
 
-    const newAnalytic = this.analyticsRepository.create({
-      budget: { id: budgetId },
-      conversationHistory,
-    });
-    await this.analyticsRepository.save(newAnalytic);
+    if (analytic) {
+      analytic.conversationHistory = conversationHistory;
+    } else {
+      analytic = this.analyticsRepository.create({
+        budget: { id: budgetId },
+        conversationHistory,
+      });
+    }
 
-    return advisorMessage;
+    await this.analyticsRepository.save(analytic);
   }
 
   private async fetchUserTransactions(
