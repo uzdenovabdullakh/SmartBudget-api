@@ -25,7 +25,7 @@ export class Budget extends Timestamps {
 
   @Column({
     nullable: false,
-    default: () => `'{"currency": "$", "currencyPlacement": "before"}'`,
+    default: () => `'{"currency": "₽", "currencyPlacement": "before"}'`,
     type: 'jsonb',
   })
   settings: BudgetSettings;
