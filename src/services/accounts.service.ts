@@ -170,32 +170,33 @@ export class AccountsService {
   }
 
   async updateAccount(id: string, dto: UpdateAccountDto, user: User) {
-    const { name } = dto;
     await this.getUserAccount(id, user);
 
-    const accountExist = await this.accountRepository.findOne({
-      where: {
-        id: Not(id),
-        name: Equal(name),
-        budget: {
-          user: {
-            id: user.id,
+    if (dto.name) {
+      const accountExist = await this.accountRepository.findOne({
+        where: {
+          id: Not(id),
+          name: Equal(dto.name),
+          budget: {
+            user: {
+              id: user.id,
+            },
           },
         },
-      },
-      withDeleted: true,
-    });
-    if (accountExist) {
-      throw ApiException.conflictError(
-        this.t.tException('already_exists', 'account'),
-      );
+        withDeleted: true,
+      });
+      if (accountExist) {
+        throw ApiException.conflictError(
+          this.t.tException('already_exists', 'account'),
+        );
+      }
     }
 
     await this.accountRepository.update(
       {
         id,
       },
-      { name },
+      dto,
     );
   }
 }
