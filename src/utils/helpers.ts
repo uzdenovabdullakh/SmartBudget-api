@@ -97,11 +97,19 @@ export const parseXLSXToTransactions = (rawData: object[]) =>
     );
     const description = descriptionKey ? row[descriptionKey] : null;
 
+    const categoryKey = Object.keys(row).find(
+      (key) =>
+        key.toLowerCase().includes('тип операции') ||
+        key.toLowerCase().includes('категория'),
+    );
+    const category = categoryKey ? row[categoryKey] : null;
+
     return {
       date,
       inflow: inflow > 0 ? inflow : null,
       outflow: outflow < 0 ? Math.abs(outflow) : null,
       description,
+      category,
     };
   });
 
@@ -136,6 +144,7 @@ export const parseCSVToTransactions = (
     let inflow = parseFloat(row[3].replace(/"/g, '').trim());
     const outflow = inflow < 0 ? -inflow : null;
     inflow = inflow > 0 ? inflow : null;
+    const category = row[6].replace(/"/g, '').trim();
 
     // Проверка на "мусор"
     if (!date || !description || (isNaN(inflow) && isNaN(outflow))) {
@@ -151,6 +160,7 @@ export const parseCSVToTransactions = (
       description,
       inflow,
       outflow,
+      category,
     });
   }
 
