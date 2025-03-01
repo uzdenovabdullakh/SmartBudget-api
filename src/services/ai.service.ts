@@ -3,14 +3,24 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Analytic } from 'src/entities/analytic.entity';
-import { ProvideFinancialAdviceDto } from 'src/validation/ai.schema';
-import { Repository } from 'typeorm';
+import {
+  AutoCategorizeDto,
+  ProvideFinancialAdviceDto,
+} from 'src/validation/ai.schema';
+import { In, IsNull, Not, Repository } from 'typeorm';
 import { TranslationService } from './translation.service';
 import { Transaction } from 'src/entities/transaction.entity';
 import { TransactionType } from 'src/constants/enums';
 import { I18nContext } from 'nestjs-i18n';
-import { TransactionWithCategory } from 'src/types/transactions.type';
+import {
+  CategorizedTransaction,
+  UncategorizedTransaction,
+} from 'src/types/transactions.type';
 import { nanoid } from 'nanoid';
+import { User } from 'src/entities/user.entity';
+import { CategoryGroupsService } from './category-groups.service';
+import { CategoriesService } from './categories.service';
+import { ApiException } from 'src/exceptions/api.exception';
 
 @Injectable()
 export class AIService {
@@ -23,6 +33,8 @@ export class AIService {
     private readonly analyticsRepository: Repository<Analytic>,
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
+    private readonly categoryGroupsService: CategoryGroupsService,
+    private readonly categoryService: CategoriesService,
   ) {
     this.hfInference = new HfInference(
       this.configService.get<string>('HF_TOKEN'),
@@ -90,9 +102,197 @@ export class AIService {
     return paginatedHistory;
   }
 
+  async categorize(dto: string[], user: User) {
+    await this.transactionRepository.manager.transaction(async (manager) => {
+      const transactionRepository = manager.getRepository(Transaction);
+
+      const transactions = await transactionRepository.find({
+        where: {
+          id: In(dto),
+          category: IsNull(),
+          description: Not(IsNull()),
+        },
+        relations: ['account', 'account.budget'],
+      });
+
+      if (!transactions.length) return;
+      const budgetId = transactions[0].account.budget.id;
+      const account = transactions[0].account;
+
+      const categoryGroups =
+        await this.categoryGroupsService.getGroupsWithCategories(
+          budgetId,
+          false,
+          user,
+        );
+
+      const transactionData = transactions.map(
+        ({ id, description, inflow, outflow }) => ({
+          id,
+          description,
+          inflow: inflow ? inflow : null,
+          outflow: outflow ? outflow : null,
+        }),
+      );
+      const categories = categoryGroups
+        .flatMap((group) => group.categories)
+        .map(({ id, name }) => ({ id, name }));
+
+      const categorizeResponse = await this.categorizeResponse(
+        transactionData,
+        categories,
+      );
+
+      const newCategories = categorizeResponse
+        .filter((trx) => !trx.categoryId)
+        .map((trx) => ({
+          name: trx.categoryName,
+          account,
+          user,
+          groupName: trx.categoryGroupName,
+        }));
+
+      const createdCategories = await this.categoryService.bulkFindOrCreate(
+        newCategories,
+        manager,
+      );
+      const categoryMap = new Map(
+        createdCategories.map((cat) => [cat.name, cat.id]),
+      );
+
+      for (const trx of categorizeResponse) {
+        const categoryId = trx.categoryId ?? categoryMap.get(trx.categoryName);
+        await transactionRepository.update(trx.id, {
+          category: { id: categoryId },
+        });
+      }
+    });
+  }
+
+  async autoCategorize(dto: AutoCategorizeDto, user: User) {
+    await this.transactionRepository.manager.transaction(async (manager) => {
+      const transactionRepository = manager.getRepository(Transaction);
+
+      const transactions = await transactionRepository.find({
+        where: {
+          account: { id: dto.accountId },
+          category: IsNull(),
+          description: Not(IsNull()),
+        },
+        relations: ['account', 'account.budget'],
+      });
+
+      if (!transactions.length) return;
+      const budgetId = transactions[0].account.budget.id;
+      const account = transactions[0].account;
+
+      const categoryGroups =
+        await this.categoryGroupsService.getGroupsWithCategories(
+          budgetId,
+          false,
+          user,
+        );
+
+      const transactionData = transactions.map(
+        ({ id, description, inflow, outflow }) => ({
+          id,
+          description,
+          inflow: inflow ? inflow : null,
+          outflow: outflow ? outflow : null,
+        }),
+      );
+      const categories = categoryGroups
+        .flatMap((group) => group.categories)
+        .map(({ id, name }) => ({ id, name }));
+
+      const categorizeResponse = await this.categorizeResponse(
+        transactionData,
+        categories,
+      );
+
+      const newCategories = categorizeResponse
+        .filter((trx) => !trx.categoryId)
+        .map((trx) => ({
+          name: trx.categoryName,
+          account,
+          user,
+          groupName: trx.categoryGroupName,
+        }));
+
+      const createdCategories = await this.categoryService.bulkFindOrCreate(
+        newCategories,
+        manager,
+      );
+      const categoryMap = new Map(
+        createdCategories.map((cat) => [cat.name, cat.id]),
+      );
+
+      for (const trx of categorizeResponse) {
+        const categoryId = trx.categoryId ?? categoryMap.get(trx.categoryName);
+        await transactionRepository.update(trx.id, {
+          category: { id: categoryId },
+        });
+      }
+    });
+  }
+
+  private async categorizeResponse(
+    transactionData: UncategorizedTransaction[],
+    categories: {
+      id: string;
+      name: string;
+    }[],
+  ) {
+    const lang = I18nContext.current().lang;
+
+    const systemPrompt = `You will be given an array of existing categories and transactions. You must categorize transactions using the description of the transaction. If the transaction does not belong to one of the presented categories, you need to create a new category and group for the category. A group is the entity to which a category belongs. For example, the Pharmacy category and the Dentistry category will belong to the medical expenses group on a common basis (both Pharmacy and Dentistry belong to medicine).
+    Do not write any solutions or explanations, complete the task yourself and give the answer in the form of a json array, SCTRICTLY as in the example:
+    [
+      {
+        id: string, // id of transaction
+        сategoryId: string, //id of presented category
+        categoryName: string, // name of the new category, if the transaction does not belong to one of the presented categories
+        categoryGroupName: string, //a group name for a new category, if the transaction does not belong to one of the presented categories
+      },
+    ]
+    Categories ${JSON.stringify(categories)}.
+    Transactions ${JSON.stringify(transactionData)}.
+    Use the language for categoryName or categoryGroupName: ${lang}.
+    `;
+
+    const modelResponse = await this.hfInference.chatCompletion({
+      model: 'meta-llama/Llama-3.3-70B-Instruct',
+      messages: [
+        {
+          role: 'system',
+          content: systemPrompt,
+        },
+      ],
+      max_tokens: 3000,
+      temperature: 0.2,
+      n: 1,
+      provider: 'sambanova',
+    });
+
+    const advisorMessage = modelResponse.choices[0].message.content;
+
+    let categorizeResponse: {
+      id: string;
+      categoryId: string;
+      categoryName: string;
+      categoryGroupName: string;
+    }[];
+    try {
+      categorizeResponse = JSON.parse(advisorMessage);
+    } catch (error) {
+      throw ApiException.serverError(`AI вернул некорректный JSON: ${error}`);
+    }
+    return categorizeResponse;
+  }
+
   private async generateAdvisorResponse(
     userMessage: string,
-    transactionData: TransactionWithCategory[],
+    transactionData: CategorizedTransaction[],
     budgetId: string,
   ) {
     const lang = I18nContext.current().lang;
@@ -192,7 +392,7 @@ export class AIService {
       query.andWhere('transaction.inflow > 0 OR transaction.outflow > 0');
     }
 
-    const transactions: TransactionWithCategory[] = await query.getMany();
+    const transactions: CategorizedTransaction[] = await query.getMany();
     return transactions;
   }
 }
