@@ -21,6 +21,8 @@ import {
   parseCSVToTransactions,
   parseXLSXToTransactions,
 } from 'src/utils/helpers';
+import { CategorizedTransaction } from 'src/types/transactions.type';
+import { CategoriesService } from './categories.service';
 
 @Injectable()
 export class TransactionsService {
@@ -29,8 +31,7 @@ export class TransactionsService {
     private readonly budgetRepository: Repository<Budget>,
     @InjectRepository(Transaction)
     private readonly transactionRepository: Repository<Transaction>,
-    @InjectRepository(Account)
-    private readonly accountRepository: Repository<Account>,
+    private readonly categoryService: CategoriesService,
     private readonly t: TranslationService,
   ) {}
 
@@ -59,59 +60,88 @@ export class TransactionsService {
   }
 
   async importTransactions(id: string, file: Express.Multer.File, user: User) {
-    const account = await this.accountRepository.findOne({
-      where: {
-        id,
-        budget: {
-          user: {
-            id: user.id,
+    await this.transactionRepository.manager.connection.transaction(
+      async (manager) => {
+        const transactionRepository = manager.getRepository(Transaction);
+        const accountRepository = manager.getRepository(Account);
+
+        const account = await accountRepository.findOne({
+          where: {
+            id,
+            budget: {
+              user: {
+                id: user.id,
+              },
+            },
           },
-        },
-      },
-    });
-    if (!account) {
-      throw ApiException.notFound(this.t.tException('not_found', 'account'));
-    }
+          relations: ['budget'],
+        });
+        if (!account) {
+          throw ApiException.notFound(
+            this.t.tException('not_found', 'account'),
+          );
+        }
 
-    const extension = file.originalname.split('.').pop();
-    let transactions: object[];
+        const extension = file.originalname.split('.').pop();
+        let parsedTrx: any[];
 
-    if (extension === 'csv') {
-      const rawData = parse(file.buffer.toString(), {
-        skip_empty_lines: true,
-        quote: "'",
-        delimiter: ',',
-        relax_quotes: true,
-        relax_column_count: true,
-      });
+        if (extension === 'csv') {
+          const rawData = parse(file.buffer.toString(), {
+            skip_empty_lines: true,
+            quote: "'",
+            delimiter: ',',
+            relax_quotes: true,
+            relax_column_count: true,
+          });
 
-      transactions = parseCSVToTransactions(rawData, this.t);
-    } else if (extension === 'xlsx') {
-      const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rawData: any[] = XLSX.utils.sheet_to_json(sheet);
+          parsedTrx = parseCSVToTransactions(rawData, this.t);
+        } else if (extension === 'xlsx') {
+          const workbook = XLSX.read(file.buffer, { type: 'buffer' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          const rawData: any[] = XLSX.utils.sheet_to_json(sheet);
 
-      const trashData = rawData
-        .slice(0, 10)
-        .find((row) => Object.keys(row).some((val) => val.includes('__EMPTY')));
-      if (trashData) {
-        throw ApiException.conflictError(
-          this.t.tException(
-            'Transaction headers were not found. The xlsx or csv format may be incorrect, or the values may be garbage',
-          ),
+          const trashData = rawData
+            .slice(0, 10)
+            .find((row) =>
+              Object.keys(row).some((val) => val.includes('__EMPTY')),
+            );
+          if (trashData) {
+            throw ApiException.conflictError(
+              this.t.tException(
+                'Transaction headers were not found. The xlsx or csv format may be incorrect, or the values may be garbage',
+              ),
+            );
+          }
+
+          parsedTrx = parseXLSXToTransactions(rawData);
+        }
+
+        const categoriesToFind = parsedTrx.map((parsed) => ({
+          name: parsed.category,
+          user,
+          account,
+        }));
+
+        const categories = await this.categoryService.bulkFindOrCreate(
+          categoriesToFind,
+          manager,
         );
-      }
+        const categoryMap = new Map(categories.map((c) => [c.name, c]));
 
-      transactions = parseXLSXToTransactions(rawData);
-    }
+        const transactions: object[] = parsedTrx.map((parsed) => ({
+          ...parsed,
+          category: { id: categoryMap.get(parsed.category)?.id },
+        }));
 
-    const newTransactions = transactions.map((row) =>
-      this.transactionRepository.create({
-        ...row,
-        account,
-      }),
+        const newTransactions = transactions.map((row) =>
+          transactionRepository.create({
+            ...row,
+            account,
+          }),
+        );
+        await transactionRepository.save(newTransactions, { chunk: 100 });
+      },
     );
-    await this.transactionRepository.save(newTransactions, { chunk: 100 });
   }
 
   async exportTransactions(type: 'csv' | 'xlsx') {
@@ -194,7 +224,8 @@ export class TransactionsService {
       .groupBy('transaction.id, category.id')
       .offset(offset)
       .limit(pageSize);
-    const transactions = await transactionsQueryBuilder.getMany();
+    const transactions: CategorizedTransaction[] =
+      await transactionsQueryBuilder.getMany();
 
     const countQueryBuilder = baseQueryBuilder
       .clone()

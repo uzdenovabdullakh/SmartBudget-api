@@ -15,7 +15,8 @@ import {
   ReorderCategoriesDto,
   UpdateCategoryDto,
 } from 'src/validation/category.schema';
-import { Equal, In, Not, Repository } from 'typeorm';
+import { EntityManager, Equal, In, Not, Repository } from 'typeorm';
+import { Account } from 'src/entities/account.entity';
 
 @Injectable()
 export class CategoriesService {
@@ -201,6 +202,62 @@ export class CategoriesService {
         });
       },
     );
+  }
+
+  async bulkFindOrCreate(
+    categories: {
+      name: string;
+      user: User;
+      account: Account;
+      groupName?: string;
+    }[],
+    manager: EntityManager,
+  ): Promise<Category[]> {
+    if (!categories.length) return [];
+
+    const categoryRepository = manager.getRepository(Category);
+    const categoryGroupRepository = manager.getRepository(CategoryGroup);
+
+    const uniqueCategories = new Map();
+    const uniqueGroups = new Map();
+
+    for (const { name, groupName, account } of categories) {
+      const groupKey = groupName ?? name;
+      uniqueCategories.set(name, groupKey);
+      uniqueGroups.set(groupKey, account.budget);
+    }
+
+    const existingGroups = await categoryGroupRepository.find({
+      where: { name: In([...uniqueGroups.keys()]) },
+    });
+    const existingGroupMap = new Map(existingGroups.map((g) => [g.name, g]));
+
+    const newGroups = [...uniqueGroups.entries()]
+      .filter(([name]) => !existingGroupMap.has(name))
+      .map(([name, budget]) => ({ name, budget }));
+
+    const insertedGroups = await categoryGroupRepository.save(newGroups);
+    insertedGroups.forEach((group) => existingGroupMap.set(group.name, group));
+
+    const existingCategories = await categoryRepository.find({
+      where: { name: In([...uniqueCategories.keys()]) },
+      relations: ['group'],
+    });
+    const existingCategoryMap = new Map(
+      existingCategories.map((c) => [c.name, c]),
+    );
+
+    const newCategories = [...uniqueCategories.entries()]
+      .filter(([name]) => !existingCategoryMap.has(name))
+      .map(([name, groupName]) => ({
+        name,
+        group: existingGroupMap.get(groupName),
+      }));
+
+    const insertedCategories = await categoryRepository.save(newCategories);
+    insertedCategories.forEach((c) => existingCategoryMap.set(c.name, c));
+
+    return [...existingCategoryMap.values()];
   }
 
   async removeCategory(id: string, user: User) {

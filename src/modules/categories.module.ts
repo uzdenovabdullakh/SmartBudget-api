@@ -18,5 +18,6 @@ import { CategoriesService } from 'src/services/categories.service';
       CategorySpending,
     ]),
   ],
+  exports: [CategoriesService],
 })
 export class CategoriesModule {}
