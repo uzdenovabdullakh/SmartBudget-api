@@ -8,6 +8,10 @@
       {
         "include": "locales/**/*",
         "watchAssets": true
+      },
+      {
+        "include": "assets/**/*",
+        "watchAssets": true
       }
     ]
   }
