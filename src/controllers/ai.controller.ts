@@ -6,14 +6,19 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  Req,
   UsePipes,
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { AIService } from 'src/services/ai.service';
+import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
+  AutoCategorizeDto,
+  AutoCategorizeSchema,
   ProvideFinancialAdviceDto,
   ProvideFinancialAdviceSchema,
 } from 'src/validation/ai.schema';
+import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
 import {
   PaginationQuerySchema,
   PaginationQueryDto,
@@ -37,5 +42,20 @@ export class AIController {
   ) {
     const { page, pageSize } = query;
     return await this.aiService.getConversationHistory(id, page, pageSize);
+  }
+
+  @Post('categorize')
+  @UsePipes(new ZodValidationPipe(ArrayOfIdsSchema))
+  async categorize(@Req() req: AuthenticationRequest, @Body() dto: string[]) {
+    return await this.aiService.categorize(dto, req.user);
+  }
+
+  @Post('auto-categorize')
+  @UsePipes(new ZodValidationPipe(AutoCategorizeSchema))
+  async autoCategorize(
+    @Req() req: AuthenticationRequest,
+    @Body() dto: AutoCategorizeDto,
+  ) {
+    return await this.aiService.autoCategorize(dto, req.user);
   }
 }
