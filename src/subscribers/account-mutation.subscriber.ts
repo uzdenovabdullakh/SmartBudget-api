@@ -48,6 +48,10 @@ export class AccountSubscriber implements EntitySubscriberInterface<Account> {
         },
       });
 
+      if (!defaultCategory) {
+        return;
+      }
+
       const amount = isRemoved ? -account.amount : account.amount;
 
       await categoryRepository.update(
