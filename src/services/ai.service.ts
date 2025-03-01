@@ -7,7 +7,7 @@ import {
   AutoCategorizeDto,
   ProvideFinancialAdviceDto,
 } from 'src/validation/ai.schema';
-import { In, IsNull, Not, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { TranslationService } from './translation.service';
 import { Transaction } from 'src/entities/transaction.entity';
 import { TransactionType } from 'src/constants/enums';
@@ -21,6 +21,7 @@ import { User } from 'src/entities/user.entity';
 import { CategoryGroupsService } from './category-groups.service';
 import { CategoriesService } from './categories.service';
 import { ApiException } from 'src/exceptions/api.exception';
+import { TransactionsService } from './transactions.service';
 
 @Injectable()
 export class AIService {
@@ -35,6 +36,7 @@ export class AIService {
     private readonly transactionRepository: Repository<Transaction>,
     private readonly categoryGroupsService: CategoryGroupsService,
     private readonly categoryService: CategoriesService,
+    private readonly transactionService: TransactionsService,
   ) {
     this.hfInference = new HfInference(
       this.configService.get<string>('HF_TOKEN'),
@@ -110,7 +112,6 @@ export class AIService {
         where: {
           id: In(dto),
           category: IsNull(),
-          description: Not(IsNull()),
         },
         relations: ['account', 'account.budget'],
       });
@@ -119,6 +120,28 @@ export class AIService {
       const budgetId = transactions[0].account.budget.id;
       const account = transactions[0].account;
 
+      const defaultCategory = await this.categoryService.getDefaultCategory(
+        budgetId,
+        user,
+      );
+
+      const transactionsWithDescription = transactions.filter(
+        (trx) => trx.description,
+      );
+      const transactionsWithoutDescription = transactions.filter(
+        (trx) => !trx.description,
+      );
+
+      if (transactionsWithoutDescription.length) {
+        await transactionRepository.update(
+          { id: In(transactionsWithoutDescription.map((trx) => trx.id)) },
+          { category: { id: defaultCategory.id } },
+        );
+        return;
+      }
+
+      if (!transactionsWithDescription.length) return;
+
       const categoryGroups =
         await this.categoryGroupsService.getGroupsWithCategories(
           budgetId,
@@ -126,7 +149,7 @@ export class AIService {
           user,
         );
 
-      const transactionData = transactions.map(
+      const transactionData = transactionsWithDescription.map(
         ({ id, description, inflow, outflow }) => ({
           id,
           description,
@@ -162,9 +185,13 @@ export class AIService {
 
       for (const trx of categorizeResponse) {
         const categoryId = trx.categoryId ?? categoryMap.get(trx.categoryName);
-        await transactionRepository.update(trx.id, {
-          category: { id: categoryId },
-        });
+        await this.transactionService.updateTransaction(
+          trx.id,
+          {
+            category: categoryId,
+          },
+          user,
+        );
       }
     });
   }
@@ -177,7 +204,6 @@ export class AIService {
         where: {
           account: { id: dto.accountId },
           category: IsNull(),
-          description: Not(IsNull()),
         },
         relations: ['account', 'account.budget'],
       });
@@ -186,6 +212,28 @@ export class AIService {
       const budgetId = transactions[0].account.budget.id;
       const account = transactions[0].account;
 
+      const defaultCategory = await this.categoryService.getDefaultCategory(
+        budgetId,
+        user,
+      );
+
+      const transactionsWithDescription = transactions.filter(
+        (trx) => trx.description,
+      );
+      const transactionsWithoutDescription = transactions.filter(
+        (trx) => !trx.description,
+      );
+
+      if (transactionsWithoutDescription.length) {
+        await transactionRepository.update(
+          { id: In(transactionsWithoutDescription.map((trx) => trx.id)) },
+          { category: { id: defaultCategory.id } },
+        );
+        return;
+      }
+
+      if (!transactionsWithDescription.length) return;
+
       const categoryGroups =
         await this.categoryGroupsService.getGroupsWithCategories(
           budgetId,
@@ -193,7 +241,7 @@ export class AIService {
           user,
         );
 
-      const transactionData = transactions.map(
+      const transactionData = transactionsWithDescription.map(
         ({ id, description, inflow, outflow }) => ({
           id,
           description,
@@ -229,9 +277,13 @@ export class AIService {
 
       for (const trx of categorizeResponse) {
         const categoryId = trx.categoryId ?? categoryMap.get(trx.categoryName);
-        await transactionRepository.update(trx.id, {
-          category: { id: categoryId },
-        });
+        await this.transactionService.updateTransaction(
+          trx.id,
+          {
+            category: categoryId,
+          },
+          user,
+        );
       }
     });
   }

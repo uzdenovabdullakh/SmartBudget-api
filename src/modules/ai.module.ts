@@ -6,6 +6,7 @@ import { Transaction } from 'src/entities/transaction.entity';
 import { AIService } from 'src/services/ai.service';
 import { CategoriesModule } from './categories.module';
 import { CategoryGroupsModule } from './category-groups.module';
+import { TransactionsModule } from './transactions.module';
 
 @Module({
   controllers: [AIController],
@@ -14,6 +15,7 @@ import { CategoryGroupsModule } from './category-groups.module';
     TypeOrmModule.forFeature([Analytic, Transaction]),
     CategoriesModule,
     CategoryGroupsModule,
+    TransactionsModule,
   ],
 })
 export class AiModule {}
