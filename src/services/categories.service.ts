@@ -145,7 +145,7 @@ export class CategoriesService {
           },
         },
       },
-      select: ['id', 'name', 'assigned', 'available', 'activity'],
+      select: ['id', 'name', 'assigned', 'available', 'spent'],
     });
 
     return defaultCategory;
@@ -271,11 +271,6 @@ export class CategoriesService {
           available: defaultCategory.available + category.available,
         });
 
-        await categoryRepository.update(id, {
-          assigned: 0,
-          activity: 0,
-          available: 0,
-        });
         await categoryRepository.delete(id);
       },
     );

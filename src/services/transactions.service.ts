@@ -418,7 +418,8 @@ export class TransactionsService {
       { id: category.id },
       {
         available: category.available + amountImpact,
-        activity: category.activity + amountImpact,
+        spent:
+          type === TransactionType.EXPENSE && category.spent + amountImpact,
       },
     );
 

@@ -43,7 +43,7 @@ export class BudgetSubscriber implements EntitySubscriberInterface<Budget> {
         manager.create(Category, {
           name: category.name,
           assigned: 0,
-          activity: 0,
+          spent: 0,
           available: 0,
           group: newGroup,
           goal: null,

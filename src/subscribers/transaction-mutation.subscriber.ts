@@ -89,7 +89,6 @@ export class TransactionSubscriber
           { id: defaultCategory.id },
           {
             available: defaultUpdateAmount,
-            activity: defaultUpdateAmount,
           },
         );
       }
@@ -107,10 +106,8 @@ export class TransactionSubscriber
               type === TransactionType.INCOME
                 ? categoryEntity.available + amount
                 : categoryEntity.available - amount,
-            activity:
-              type === TransactionType.INCOME
-                ? categoryEntity.activity + amount
-                : categoryEntity.activity - amount,
+            spent:
+              type === TransactionType.EXPENSE && categoryEntity.spent + amount,
           },
         );
 
