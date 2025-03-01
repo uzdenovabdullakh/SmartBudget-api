@@ -1,4 +1,4 @@
-export type TransactionWithCategory = {
+export type CategorizedTransaction = {
   id: string;
   inflow: number;
   outflow: number;
@@ -8,4 +8,11 @@ export type TransactionWithCategory = {
     id: string;
     name: string;
   };
+};
+
+export type UncategorizedTransaction = {
+  id: string;
+  inflow: number;
+  outflow: number;
+  description: string;
 };
