@@ -65,33 +65,31 @@ export class TransactionSubscriber
         },
       );
 
-      if (!transaction.category) {
-        const defaultCategory = await categoryRepository.findOne({
-          where: {
-            name: Or(
-              Equal('Inflow: Ready to Assign'),
-              Equal('Приток: Готов к перераспределению'),
-            ),
-            group: {
-              budget: {
-                id: account.budget.id,
-              },
+      const defaultCategory = await categoryRepository.findOne({
+        where: {
+          name: Or(
+            Equal('Inflow: Ready to Assign'),
+            Equal('Приток: Готов к перераспределению'),
+          ),
+          group: {
+            budget: {
+              id: account.budget.id,
             },
           },
-        });
+        },
+      });
 
-        const defaultUpdateAmount =
-          type === TransactionType.INCOME
-            ? account.amount + amount
-            : account.amount - amount;
+      const defaultUpdateAmount =
+        type === TransactionType.INCOME
+          ? account.amount + amount
+          : account.amount - amount;
 
-        await categoryRepository.update(
-          { id: defaultCategory.id },
-          {
-            available: defaultUpdateAmount,
-          },
-        );
-      }
+      await categoryRepository.update(
+        { id: defaultCategory.id },
+        {
+          available: defaultUpdateAmount,
+        },
+      );
 
       if (transaction.category) {
         const categoryEntity = await categoryRepository.findOne({
@@ -107,7 +105,9 @@ export class TransactionSubscriber
                 ? categoryEntity.available + amount
                 : categoryEntity.available - amount,
             spent:
-              type === TransactionType.EXPENSE && categoryEntity.spent + amount,
+              type === TransactionType.EXPENSE
+                ? categoryEntity.spent + amount
+                : undefined,
           },
         );
 

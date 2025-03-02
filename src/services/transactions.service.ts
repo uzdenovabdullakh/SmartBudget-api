@@ -419,7 +419,9 @@ export class TransactionsService {
       {
         available: category.available + amountImpact,
         spent:
-          type === TransactionType.EXPENSE && category.spent + amountImpact,
+          type === TransactionType.EXPENSE
+            ? category.spent + amountImpact
+            : undefined,
       },
     );
 
