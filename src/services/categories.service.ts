@@ -162,7 +162,7 @@ export class CategoriesService {
 
         await categoryRepository.update(category.id, {
           assigned: category.assigned + newAmount,
-          available: category.available + newAmount,
+          available: category.available - newAmount,
         });
 
         const defaultCategory = await this.getDefaultCategory(
@@ -187,12 +187,10 @@ export class CategoriesService {
         const toCategory = await this.getCategory(to, user);
 
         await categoryRepository.update(from, {
-          assigned: fromCategory.assigned - amount,
           available: fromCategory.available - amount,
         });
 
         await categoryRepository.update(to, {
-          assigned: toCategory.assigned + amount,
           available: toCategory.available + amount,
         });
       },
