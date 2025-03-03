@@ -78,7 +78,9 @@ export const handleInsertExpense = (
   }
 
   const overspending =
-    category.available > 0 ? Math.max(0, amount - category.available) : amount;
+    category.available >= 0
+      ? Math.max(0, remainingAmount - category.available)
+      : amount;
   category.spent += overspending;
   category.available -= remainingAmount;
 };
