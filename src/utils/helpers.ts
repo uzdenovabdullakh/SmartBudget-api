@@ -1,4 +1,5 @@
-import { Period } from 'src/constants/enums';
+import { Period, TransactionType } from 'src/constants/enums';
+import { Transaction } from 'src/entities/transaction.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { TranslationService } from 'src/services/translation.service';
 
@@ -165,4 +166,33 @@ export const parseCSVToTransactions = (
   }
 
   return transactions;
+};
+
+export const calculateAmountImpact = ({
+  currentAmount,
+  currentType,
+  newAmount,
+  newType,
+}: {
+  currentAmount: number;
+  currentType: TransactionType;
+  newAmount: number;
+  newType: TransactionType;
+}): number => {
+  let amountImpact = newAmount - currentAmount;
+  if (newType !== currentType) {
+    amountImpact =
+      (currentType === TransactionType.INCOME
+        ? -currentAmount
+        : currentAmount) +
+      (newType === TransactionType.INCOME ? newAmount : -newAmount);
+  }
+  return amountImpact;
+};
+
+export const hasCategoryChanged = (
+  currentTransaction: Transaction,
+  newTransaction: Transaction,
+): boolean => {
+  return currentTransaction.category?.id !== newTransaction.category?.id;
 };

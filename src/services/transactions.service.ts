@@ -17,6 +17,8 @@ import { Account } from 'src/entities/account.entity';
 import { Category } from 'src/entities/category.entity';
 import { TransactionType } from 'src/constants/enums';
 import {
+  calculateAmountImpact,
+  hasCategoryChanged,
   parseCSVToTransactions,
   parseXLSXToTransactions,
 } from 'src/utils/helpers';
@@ -311,7 +313,7 @@ export class TransactionsService {
           : TransactionType.EXPENSE;
         const newAmount = newTransaction.inflow || newTransaction.outflow || 0;
 
-        const amountImpact = this.calculateAmountImpact({
+        const amountImpact = calculateAmountImpact({
           currentAmount,
           currentType,
           newAmount,
@@ -332,7 +334,7 @@ export class TransactionsService {
           );
         }
 
-        if (this.hasCategoryChanged(currentTransaction, newTransaction)) {
+        if (hasCategoryChanged(currentTransaction, newTransaction)) {
           await this.updateCategory({
             categoryRepository,
             category: currentTransaction.category,
@@ -360,28 +362,6 @@ export class TransactionsService {
     );
   }
 
-  private calculateAmountImpact({
-    currentAmount,
-    currentType,
-    newAmount,
-    newType,
-  }: {
-    currentAmount: number;
-    currentType: TransactionType;
-    newAmount: number;
-    newType: TransactionType;
-  }): number {
-    let amountImpact = newAmount - currentAmount;
-    if (newType !== currentType) {
-      amountImpact =
-        (currentType === TransactionType.INCOME
-          ? -currentAmount
-          : currentAmount) +
-        (newType === TransactionType.INCOME ? newAmount : -newAmount);
-    }
-    return amountImpact;
-  }
-
   private async updateAccount(
     accountRepository: Repository<Account>,
     account: Account,
@@ -391,13 +371,6 @@ export class TransactionsService {
       { id: account.id },
       { amount: account.amount + amountImpact },
     );
-  }
-
-  private hasCategoryChanged(
-    currentTransaction: Transaction,
-    newTransaction: Transaction,
-  ): boolean {
-    return currentTransaction.category?.id !== newTransaction.category?.id;
   }
 
   private async updateCategory({
@@ -452,10 +425,11 @@ export class TransactionsService {
       },
     });
 
-    await this.updateCategory({
-      categoryRepository,
-      category: defaultCategory,
-      amountImpact,
-    });
+    await categoryRepository.update(
+      { id: defaultCategory.id },
+      {
+        available: defaultCategory.available + amountImpact,
+      },
+    );
   }
 }
