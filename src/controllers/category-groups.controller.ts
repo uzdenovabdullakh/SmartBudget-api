@@ -51,7 +51,7 @@ export class CategoryGroupsController {
   ) {
     return await this.categoryGroupsService.getGroupsWithCategories(
       id,
-      query.default,
+      query,
       req.user,
     );
   }

@@ -145,7 +145,7 @@ export class AIService {
       const categoryGroups =
         await this.categoryGroupsService.getGroupsWithCategories(
           budgetId,
-          false,
+          { default: false },
           user,
         );
 
@@ -237,7 +237,7 @@ export class AIService {
       const categoryGroups =
         await this.categoryGroupsService.getGroupsWithCategories(
           budgetId,
-          false,
+          { default: false },
           user,
         );
 
