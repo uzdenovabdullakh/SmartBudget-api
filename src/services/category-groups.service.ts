@@ -7,10 +7,12 @@ import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import {
   CreateCategoryGroupDto,
+  GetCategoryGroup,
   ReorderCategoryGroupsDto,
   UpdateCategoryGroupDto,
 } from 'src/validation/category-group.schema';
 import { Equal, Not, Repository } from 'typeorm';
+import { CategoryFilter } from 'src/constants/enums';
 
 @Injectable()
 export class CategoryGroupsService {
@@ -46,9 +48,10 @@ export class CategoryGroupsService {
 
   async getGroupsWithCategories(
     id: string,
-    withDefault: boolean = false,
+    query: GetCategoryGroup,
     user: User,
   ) {
+    const { default: withDefault = false, filter } = query;
     const translateDefaultGroup = this.t.tCategories('Inflow', 'groups');
 
     const queryBuilder = this.categoryGroupRepository
@@ -80,6 +83,23 @@ export class CategoryGroupsService {
       queryBuilder.andWhere('categoryGroup.name != :translateDefaultGroup', {
         translateDefaultGroup,
       });
+    }
+
+    if (filter === CategoryFilter.SPENT) {
+      queryBuilder.andWhere('categories.spent > 0');
+    }
+    if (filter === CategoryFilter.AVAILABLE) {
+      queryBuilder
+        .andWhere('categories.spent <= 0')
+        .andWhere('categories.available > 0');
+    }
+    if (filter === CategoryFilter.ASSIGNED) {
+      queryBuilder.andWhere('categories.assigned > 0');
+    }
+    if (filter === CategoryFilter.LIMIT_REACHED) {
+      queryBuilder.andWhere(
+        'categoryLimit.spentAmount >= categoryLimit.limitAmount',
+      );
     }
 
     const categories = await queryBuilder.getMany();

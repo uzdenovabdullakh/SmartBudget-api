@@ -30,3 +30,10 @@ export enum TransactionType {
   INCOME = 'income',
   EXPENSE = 'expense',
 }
+
+export enum CategoryFilter {
+  SPENT = 'spent',
+  AVAILABLE = 'available',
+  LIMIT_REACHED = 'limit_reached',
+  ASSIGNED = 'assigned',
+}
