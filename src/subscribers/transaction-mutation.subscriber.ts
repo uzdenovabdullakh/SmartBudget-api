@@ -120,29 +120,31 @@ export class TransactionSubscriber
         },
       );
 
-      const defaultCategory = await categoryRepository.findOne({
-        where: {
-          name: Or(
-            Equal('Inflow: Ready to Assign'),
-            Equal('Приток: Готов к перераспределению'),
-          ),
-          group: {
-            budget: {
-              id: account.budget.id,
+      if (!transaction.category) {
+        const defaultCategory = await categoryRepository.findOne({
+          where: {
+            name: Or(
+              Equal('Inflow: Ready to Assign'),
+              Equal('Приток: Готов к перераспределению'),
+            ),
+            group: {
+              budget: {
+                id: account.budget.id,
+              },
             },
           },
-        },
-      });
+        });
 
-      await categoryRepository.update(
-        { id: defaultCategory.id },
-        {
-          available:
-            type === TransactionType.INCOME
-              ? account.amount + amount
-              : account.amount - amount,
-        },
-      );
+        await categoryRepository.update(
+          { id: defaultCategory.id },
+          {
+            available:
+              type === TransactionType.INCOME
+                ? account.amount + amount
+                : account.amount - amount,
+          },
+        );
+      }
 
       if (transaction.category) {
         await this.updateCategory(transaction, manager, isRemoved);
