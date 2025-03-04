@@ -67,7 +67,7 @@ export class CategoryGroupsService {
         'categories.name',
         'categories.available',
         'categories.assigned',
-        'categories.activity',
+        'categories.spent',
         'categories.order',
         'categoryLimit.limitAmount',
         'categoryLimit.spentAmount',

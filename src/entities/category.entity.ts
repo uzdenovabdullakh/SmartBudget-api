@@ -38,7 +38,7 @@ export class Category extends Timestamps {
     scale: 2,
     transformer: new NumericTransformer(),
   })
-  activity: number;
+  spent: number;
 
   @Column({
     default: 0,

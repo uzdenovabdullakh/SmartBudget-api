@@ -145,7 +145,7 @@ export class CategoriesService {
           },
         },
       },
-      select: ['id', 'name', 'assigned', 'available', 'activity'],
+      select: ['id', 'name', 'assigned', 'available', 'spent'],
     });
 
     return defaultCategory;
@@ -162,7 +162,7 @@ export class CategoriesService {
 
         await categoryRepository.update(category.id, {
           assigned: category.assigned + newAmount,
-          available: category.available + newAmount,
+          available: category.available - newAmount,
         });
 
         const defaultCategory = await this.getDefaultCategory(
@@ -187,12 +187,10 @@ export class CategoriesService {
         const toCategory = await this.getCategory(to, user);
 
         await categoryRepository.update(from, {
-          assigned: fromCategory.assigned - amount,
           available: fromCategory.available - amount,
         });
 
         await categoryRepository.update(to, {
-          assigned: toCategory.assigned + amount,
           available: toCategory.available + amount,
         });
       },
@@ -271,11 +269,6 @@ export class CategoriesService {
           available: defaultCategory.available + category.available,
         });
 
-        await categoryRepository.update(id, {
-          assigned: 0,
-          activity: 0,
-          available: 0,
-        });
         await categoryRepository.delete(id);
       },
     );

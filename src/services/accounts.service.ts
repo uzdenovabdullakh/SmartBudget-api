@@ -13,7 +13,8 @@ import {
   UpdateAccountDto,
 } from 'src/validation/account.schema';
 import { PaginationQueryDto } from 'src/validation/pagination.schema';
-import { Equal, Not, Repository } from 'typeorm';
+import { Equal, Not, Or, Repository } from 'typeorm';
+import { Category } from 'src/entities/category.entity';
 
 @Injectable()
 export class AccountsService {
@@ -140,7 +141,7 @@ export class AccountsService {
       .innerJoin('a.budget', 'b')
       .where('a.id = :id', { id: id })
       .andWhere('b.user.id = :userId', { userId: user.id })
-      .select(['a.id', 'a.name', 'a.type', 'a.amount'])
+      .select(['a.id', 'a.name', 'a.type', 'a.amount', 'b'])
       .getOne();
 
     if (!account) {
@@ -170,32 +171,76 @@ export class AccountsService {
   }
 
   async updateAccount(id: string, dto: UpdateAccountDto, user: User) {
-    const { name } = dto;
-    await this.getUserAccount(id, user);
+    await this.accountRepository.manager.connection.transaction(
+      async (manager) => {
+        const currentAccount = await this.getUserAccount(id, user);
 
-    const accountExist = await this.accountRepository.findOne({
+        const categoryRepository = manager.getRepository(Category);
+        const accountRepository = manager.getRepository(Account);
+
+        if (dto.name) {
+          const accountExist = await this.accountRepository.findOne({
+            where: {
+              id: Not(id),
+              name: Equal(dto.name),
+              budget: {
+                user: {
+                  id: user.id,
+                },
+              },
+            },
+            withDeleted: true,
+          });
+          if (accountExist) {
+            throw ApiException.conflictError(
+              this.t.tException('already_exists', 'account'),
+            );
+          }
+        }
+
+        await accountRepository.update(
+          {
+            id,
+          },
+          dto,
+        );
+        if (dto.amount) {
+          const amountImpact = dto.amount - currentAccount.amount;
+
+          await this.updateDefaultCategory(
+            currentAccount,
+            categoryRepository,
+            amountImpact,
+          );
+        }
+      },
+    );
+  }
+
+  private async updateDefaultCategory(
+    account: Account,
+    categoryRepository: Repository<Category>,
+    amountImpact: number,
+  ) {
+    const defaultCategory = await categoryRepository.findOne({
       where: {
-        id: Not(id),
-        name: Equal(name),
-        budget: {
-          user: {
-            id: user.id,
+        name: Or(
+          Equal('Inflow: Ready to Assign'),
+          Equal('Приток: Готов к перераспределению'),
+        ),
+        group: {
+          budget: {
+            id: account.budget.id,
           },
         },
       },
-      withDeleted: true,
     });
-    if (accountExist) {
-      throw ApiException.conflictError(
-        this.t.tException('already_exists', 'account'),
-      );
-    }
 
-    await this.accountRepository.update(
+    await categoryRepository.update(
+      { id: defaultCategory.id },
       {
-        id,
+        available: defaultCategory.available + amountImpact,
       },
-      { name },
     );
   }
 }

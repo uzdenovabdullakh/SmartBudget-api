@@ -12,6 +12,12 @@ import { Account } from 'src/entities/account.entity';
 import { Category } from 'src/entities/category.entity';
 import { TransactionType } from 'src/constants/enums';
 import { CategorySpending } from 'src/entities/category-spending.entity';
+import {
+  handleInsertExpense,
+  handleInsertIncome,
+  handleRemoveExpense,
+  handleRemoveIncome,
+} from 'src/utils/category-values-utils';
 
 @EventSubscriber()
 export class TransactionSubscriber
@@ -31,6 +37,57 @@ export class TransactionSubscriber
     await this.updateAccountAndCategory(entity, manager, true);
   }
 
+  private async updateCategory(
+    transaction: Transaction,
+    manager: EntityManager,
+    isRemoved: boolean = false,
+  ) {
+    if (!transaction.category) {
+      return;
+    }
+
+    const categoryRepository = manager.getRepository(Category);
+    const categorySpendingRepository = manager.getRepository(CategorySpending);
+
+    const categoryEntity = await categoryRepository.findOne({
+      where: { id: transaction.category.id },
+      relations: ['categorySpending'],
+    });
+
+    if (!categoryEntity) {
+      return;
+    }
+
+    const type = transaction.inflow
+      ? TransactionType.INCOME
+      : TransactionType.EXPENSE;
+    const amount = transaction.inflow || transaction.outflow || 0;
+
+    if (isRemoved) {
+      if (type === TransactionType.INCOME) {
+        handleRemoveIncome(categoryEntity, amount);
+      } else {
+        handleRemoveExpense(categoryEntity, amount);
+      }
+    } else {
+      if (type === TransactionType.INCOME) {
+        handleInsertIncome(categoryEntity, amount);
+      } else {
+        handleInsertExpense(categoryEntity, amount);
+      }
+    }
+
+    await categoryRepository.save(categoryEntity);
+
+    if (categoryEntity.categorySpending && type === TransactionType.EXPENSE) {
+      const { categorySpending } = categoryEntity;
+      const spentAmount = isRemoved ? -amount : amount;
+      await categorySpendingRepository.update(categorySpending.id, {
+        spentAmount: Math.max(0, categorySpending.spentAmount + spentAmount),
+      });
+    }
+  }
+
   private async updateAccountAndCategory(
     transaction: Transaction,
     manager: EntityManager,
@@ -39,8 +96,6 @@ export class TransactionSubscriber
     await manager.connection.transaction(async (manager) => {
       const accountRepository = manager.getRepository(Account);
       const categoryRepository = manager.getRepository(Category);
-      const categorySpendingRepository =
-        manager.getRepository(CategorySpending);
 
       const account = await accountRepository.findOne({
         where: { id: transaction.account.id },
@@ -80,49 +135,19 @@ export class TransactionSubscriber
           },
         });
 
-        const defaultUpdateAmount =
-          type === TransactionType.INCOME
-            ? account.amount + amount
-            : account.amount - amount;
-
         await categoryRepository.update(
           { id: defaultCategory.id },
           {
-            available: defaultUpdateAmount,
-            activity: defaultUpdateAmount,
+            available:
+              type === TransactionType.INCOME
+                ? account.amount + amount
+                : account.amount - amount,
           },
         );
       }
 
       if (transaction.category) {
-        const categoryEntity = await categoryRepository.findOne({
-          where: { id: transaction.category.id },
-          relations: ['categorySpending'],
-        });
-
-        await categoryRepository.update(
-          { id: categoryEntity.id },
-          {
-            available:
-              type === TransactionType.INCOME
-                ? categoryEntity.available + amount
-                : categoryEntity.available - amount,
-            activity:
-              type === TransactionType.INCOME
-                ? categoryEntity.activity + amount
-                : categoryEntity.activity - amount,
-          },
-        );
-
-        if (
-          categoryEntity.categorySpending &&
-          type === TransactionType.EXPENSE
-        ) {
-          const { categorySpending } = categoryEntity;
-          await categorySpendingRepository.update(categorySpending.id, {
-            spentAmount: categorySpending.spentAmount + amount,
-          });
-        }
+        await this.updateCategory(transaction, manager, isRemoved);
       }
     });
   }
