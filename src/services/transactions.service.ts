@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Equal, In, Or, Repository } from 'typeorm';
 import { parse } from 'csv-parse/sync';
 import * as XLSX from 'xlsx';
-import { stringify } from 'csv-stringify/sync';
 import {
   CreateTransactionDto,
   GetTransactionsQuery,
@@ -18,9 +17,12 @@ import { Account } from 'src/entities/account.entity';
 import { Category } from 'src/entities/category.entity';
 import { TransactionType } from 'src/constants/enums';
 import {
+  calculateAmountImpact,
+  hasCategoryChanged,
   parseCSVToTransactions,
   parseXLSXToTransactions,
 } from 'src/utils/helpers';
+import { CategorySpending } from 'src/entities/category-spending.entity';
 import { CategorizedTransaction } from 'src/types/transactions.type';
 import { CategoriesService } from './categories.service';
 
@@ -144,32 +146,6 @@ export class TransactionsService {
     );
   }
 
-  async exportTransactions(type: 'csv' | 'xlsx') {
-    const transactions = await this.transactionRepository.find();
-    const data = transactions.map((t: Transaction) => ({
-      id: t.id,
-      inflow: t.inflow,
-      outflow: t.outflow,
-      category: t.category?.name || null,
-      description: t.description,
-      date: t.date.toISOString(),
-    }));
-
-    if (type == 'csv') {
-      return Buffer.from(stringify(data, { header: true }));
-    }
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Transactions');
-
-    const xlsxBuffer = XLSX.write(workbook, {
-      bookType: 'xlsx',
-      type: 'buffer',
-    });
-    return Buffer.from(xlsxBuffer);
-  }
-
   async getTransactions(id: string, filter: GetTransactionsQuery, user: User) {
     const {
       startDate,
@@ -253,7 +229,12 @@ export class TransactionsService {
         },
       },
       select: ['id', 'inflow', 'outflow'],
-      relations: ['account', 'category', 'account.budget'],
+      relations: [
+        'account',
+        'category',
+        'account.budget',
+        'category.categorySpending',
+      ],
     });
 
     if (!transaction) {
@@ -318,6 +299,8 @@ export class TransactionsService {
       async (manager) => {
         const accountRepository = manager.getRepository(Account);
         const categoryRepository = manager.getRepository(Category);
+        const categorySpendingRepository =
+          manager.getRepository(CategorySpending);
 
         const currentType = currentTransaction.inflow
           ? TransactionType.INCOME
@@ -330,12 +313,12 @@ export class TransactionsService {
           : TransactionType.EXPENSE;
         const newAmount = newTransaction.inflow || newTransaction.outflow || 0;
 
-        const amountImpact = this.calculateAmountImpact(
+        const amountImpact = calculateAmountImpact({
           currentAmount,
           currentType,
           newAmount,
           newType,
-        );
+        });
 
         await this.updateAccount(
           accountRepository,
@@ -351,43 +334,33 @@ export class TransactionsService {
           );
         }
 
-        if (this.hasCategoryChanged(currentTransaction, newTransaction)) {
-          await this.updateCategory(
+        // FIXME исправить обновление категории при смене категории у транзакции
+        if (hasCategoryChanged(currentTransaction, newTransaction)) {
+          await this.updateCategory({
             categoryRepository,
-            currentTransaction.category,
-            -amountImpact,
-          );
-          await this.updateCategory(
+            category: currentTransaction.category,
+            amountImpact: -currentAmount,
+            categorySpendingRepository,
+            type: currentType,
+          });
+          await this.updateCategory({
             categoryRepository,
-            newTransaction.category,
-            amountImpact,
-          );
+            category: newTransaction.category,
+            amountImpact: newAmount,
+            categorySpendingRepository,
+            type: newType,
+          });
         } else if (newTransaction.category) {
-          await this.updateCategory(
+          await this.updateCategory({
             categoryRepository,
-            newTransaction.category,
+            category: newTransaction.category,
             amountImpact,
-          );
+            categorySpendingRepository,
+            type: newType,
+          });
         }
       },
     );
-  }
-
-  private calculateAmountImpact(
-    currentAmount: number,
-    currentType: TransactionType,
-    newAmount: number,
-    newType: TransactionType,
-  ): number {
-    let amountImpact = newAmount - currentAmount;
-    if (newType !== currentType) {
-      amountImpact =
-        (currentType === TransactionType.INCOME
-          ? -currentAmount
-          : currentAmount) +
-        (newType === TransactionType.INCOME ? newAmount : -newAmount);
-    }
-    return amountImpact;
   }
 
   private async updateAccount(
@@ -401,26 +374,70 @@ export class TransactionsService {
     );
   }
 
-  private hasCategoryChanged(
-    currentTransaction: Transaction,
-    newTransaction: Transaction,
-  ): boolean {
-    return currentTransaction.category?.id !== newTransaction.category?.id;
-  }
-
-  private async updateCategory(
-    categoryRepository: Repository<Category>,
-    category: Category,
-    amountImpact: number,
-  ) {
+  private async updateCategory({
+    categoryRepository,
+    category,
+    amountImpact,
+    categorySpendingRepository,
+    type,
+  }: {
+    categoryRepository: Repository<Category>;
+    category: Category;
+    amountImpact: number;
+    categorySpendingRepository?: Repository<CategorySpending>;
+    type: TransactionType;
+  }) {
     if (!category) return;
-    await categoryRepository.update(
-      { id: category.id },
-      {
-        available: category.available + amountImpact,
-        activity: category.activity + amountImpact,
-      },
-    );
+
+    if (type === TransactionType.EXPENSE) {
+      if (category.assigned > 0) {
+        const amount = Math.abs(amountImpact);
+        const assignedReduction = Math.min(amount, category.assigned);
+        const remainingImpact = amount - assignedReduction;
+        const availableChange = category.available - remainingImpact;
+        const spentIncrease =
+          availableChange < 0 ? Math.abs(availableChange) : 0;
+
+        await categoryRepository.update(
+          { id: category.id },
+          {
+            assigned: Math.max(category.assigned - amount, 0),
+            available: availableChange,
+            spent: category.spent + spentIncrease,
+          },
+        );
+
+        return;
+      }
+
+      const spentRemainingImpact =
+        category.available > 0
+          ? Math.abs(category.available + amountImpact)
+          : Math.abs(amountImpact);
+
+      await categoryRepository.update(
+        { id: category.id },
+        {
+          available: category.available + amountImpact,
+          spent: category.spent + spentRemainingImpact,
+        },
+      );
+
+      if (category.categorySpending) {
+        const { categorySpending } = category;
+        await categorySpendingRepository.update(categorySpending.id, {
+          spentAmount: categorySpending.spentAmount + amountImpact,
+        });
+      }
+    } else {
+      await categoryRepository.update(
+        { id: category.id },
+        {
+          available: category.available + amountImpact,
+          spent: Math.max(category.spent - amountImpact, 0),
+        },
+      );
+    }
   }
 
   private async updateDefaultCategory(
@@ -442,10 +459,11 @@ export class TransactionsService {
       },
     });
 
-    await this.updateCategory(
-      categoryRepository,
-      defaultCategory,
-      amountImpact,
+    await categoryRepository.update(
+      { id: defaultCategory.id },
+      {
+        available: defaultCategory.available + amountImpact,
+      },
     );
   }
 }

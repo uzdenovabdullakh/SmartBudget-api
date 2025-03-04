@@ -19,7 +19,6 @@ import {
   UpdateBudgetSchema,
   UpdateBudgetDto,
 } from 'src/validation/budget.schema';
-import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
 import { TranslationService } from 'src/services/translation.service';
 
 @Controller('budgets')
@@ -44,11 +43,6 @@ export class BudgetsController {
   @Get()
   async getBudgets(@Req() req: AuthenticationRequest) {
     return await this.budgetService.getUserBudgets(req.user);
-  }
-
-  @Get('removed')
-  async getRemovedBudgets(@Req() req: AuthenticationRequest) {
-    return await this.budgetService.getRemovedBudgets(req.user);
   }
 
   @Get(':id')
@@ -79,30 +73,6 @@ export class BudgetsController {
     await this.budgetService.deleteBudget(id, req.user);
     return {
       message: this.t.tMessage('removed', 'budget'),
-    };
-  }
-
-  @Delete()
-  @UsePipes(new ZodValidationPipe(ArrayOfIdsSchema))
-  async deleteForever(
-    @Req() req: AuthenticationRequest,
-    @Body() dto: string[],
-  ) {
-    await this.budgetService.deleteForever(dto, req.user);
-    return {
-      message: this.t.tMessage('removed_plural', 'budget'),
-    };
-  }
-
-  @Post('restore')
-  @UsePipes(new ZodValidationPipe(ArrayOfIdsSchema))
-  async restoreBudgets(
-    @Req() req: AuthenticationRequest,
-    @Body() dto: string[],
-  ) {
-    await this.budgetService.restoreBudgets(dto, req.user);
-    return {
-      message: this.t.tMessage('restored_plural', 'budget'),
     };
   }
 }

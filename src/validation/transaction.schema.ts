@@ -22,8 +22,6 @@ export const UpdateTransactionSchema = transactionSchema
   .partial()
   .omit({ accountId: true });
 
-export const ExportTypeSchema = z.object({ type: z.enum(['csv', 'xlsx']) });
-
 export const GetTransactionsSchema = z
   .object({
     startDate: z.string().optional(),
@@ -45,5 +43,4 @@ export const GetTransactionsSchema = z
 
 export type CreateTransactionDto = z.infer<typeof CreateTransactionSchema>;
 export type UpdateTransactionDto = z.infer<typeof UpdateTransactionSchema>;
-export type ExportTypeQuery = z.infer<typeof ExportTypeSchema>;
 export type GetTransactionsQuery = z.infer<typeof GetTransactionsSchema>;

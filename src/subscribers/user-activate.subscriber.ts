@@ -8,6 +8,8 @@ import { User } from 'src/entities/user.entity';
 import { Brief } from 'src/entities/brief.entity';
 import { Budget } from 'src/entities/budget.entity';
 import { BriefQuiz } from 'src/constants/constants';
+import { Account } from 'src/entities/account.entity';
+import { AccountType } from 'src/constants/enums';
 
 @EventSubscriber()
 export class UserSubscriber implements EntitySubscriberInterface<User> {
@@ -33,9 +35,16 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
 
       const budget = manager.create(Budget, {
         user: entity,
-        name: `${entity.login} budget`,
+        name: `Бюджет ${entity.login}`,
       });
       await manager.save(Budget, budget);
+
+      await manager.save(Account, {
+        name: 'Первый счет',
+        budget: budget,
+        type: AccountType.CASH,
+        amount: 0,
+      });
     }
   }
 
@@ -53,9 +62,16 @@ export class UserSubscriber implements EntitySubscriberInterface<User> {
 
       const budget = manager.create(Budget, {
         user: entity,
-        name: `${entity.login} budget`,
+        name: `Бюджет ${entity.login}`,
       });
       await manager.save(Budget, budget);
+
+      await manager.save(Account, {
+        name: 'Первый счет',
+        budget: budget,
+        type: AccountType.CASH,
+        amount: 0,
+      });
     }
   }
 }

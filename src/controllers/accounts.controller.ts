@@ -21,7 +21,6 @@ import {
   UpdateAccountDto,
   UpdateAccountSchema,
 } from 'src/validation/account.schema';
-import { ArrayOfIdsSchema } from 'src/validation/array-of-ids.schema';
 import {
   PaginationQueryDto,
   PaginationQuerySchema,
@@ -60,11 +59,6 @@ export class AccountsController {
     });
   }
 
-  @Get('removed')
-  async getRemovedAccounts(@Req() req: AuthenticationRequest) {
-    return await this.accountService.getRemovedAccounts(req.user);
-  }
-
   @Get(':id')
   async getAccount(
     @Param('id', ParseUUIDPipe) id: string,
@@ -81,30 +75,6 @@ export class AccountsController {
     await this.accountService.deleteAccount(id, req.user);
     return {
       message: this.t.tMessage('removed', 'account'),
-    };
-  }
-
-  @Delete()
-  @UsePipes(new ZodValidationPipe(ArrayOfIdsSchema))
-  async deleteForever(
-    @Req() req: AuthenticationRequest,
-    @Body() dto: string[],
-  ) {
-    await this.accountService.deleteForever(dto, req.user);
-    return {
-      message: this.t.tMessage('removed_plural', 'account'),
-    };
-  }
-
-  @Post('restore')
-  @UsePipes(new ZodValidationPipe(ArrayOfIdsSchema))
-  async restoreAccounts(
-    @Req() req: AuthenticationRequest,
-    @Body() dto: string[],
-  ) {
-    await this.accountService.restoreAccounts(dto, req.user);
-    return {
-      message: this.t.tMessage('restored_plural', 'account'),
     };
   }
 

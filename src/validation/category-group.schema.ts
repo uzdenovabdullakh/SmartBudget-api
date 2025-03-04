@@ -1,4 +1,5 @@
 import i18next from 'i18next';
+import { CategoryFilter } from 'src/constants/enums';
 import { z } from 'src/utils/zod-map';
 
 export const CreateCategoryGroupSchema = z
@@ -17,7 +18,11 @@ export const UpdateCategoryGroupSchema =
   CreateCategoryGroupSchema.partial().pick({ name: true });
 
 export const GetCategoryGroupSchema = z.object({
-  default: z.coerce.boolean().optional(),
+  default: z
+    .union([z.boolean(), z.string()])
+    .transform((val) => val === true || val === 'true')
+    .optional(),
+  filter: z.nativeEnum(CategoryFilter).optional(),
 });
 
 export const ReorderCategoryGroupsSchema = z.object({

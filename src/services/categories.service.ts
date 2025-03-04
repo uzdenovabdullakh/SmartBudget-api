@@ -2,14 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TranslationService } from './translation.service';
 import { CategoryGroup } from 'src/entities/category-group.entity';
-import { CategorySpending } from 'src/entities/category-spending.entity';
 import { Category } from 'src/entities/category.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
-import { calculatePeriod } from 'src/utils/helpers';
 import {
   AssigningChangeDto,
-  CategoryLimitDto,
   CreateCategoryDto,
   MoveAvaliableDto,
   ReorderCategoriesDto,
@@ -25,8 +22,6 @@ export class CategoriesService {
     private readonly categoryRepository: Repository<Category>,
     @InjectRepository(CategoryGroup)
     private readonly categoryGroupRepository: Repository<CategoryGroup>,
-    @InjectRepository(CategorySpending)
-    private readonly categorySpendingRepository: Repository<CategorySpending>,
     private readonly t: TranslationService,
   ) {}
 
@@ -150,7 +145,7 @@ export class CategoriesService {
           },
         },
       },
-      select: ['id', 'name', 'assigned', 'available', 'activity'],
+      select: ['id', 'name', 'assigned', 'available', 'spent'],
     });
 
     return defaultCategory;
@@ -167,7 +162,7 @@ export class CategoriesService {
 
         await categoryRepository.update(category.id, {
           assigned: category.assigned + newAmount,
-          available: category.available + newAmount,
+          available: category.available - newAmount,
         });
 
         const defaultCategory = await this.getDefaultCategory(
@@ -192,12 +187,10 @@ export class CategoriesService {
         const toCategory = await this.getCategory(to, user);
 
         await categoryRepository.update(from, {
-          assigned: fromCategory.assigned - amount,
           available: fromCategory.available - amount,
         });
 
         await categoryRepository.update(to, {
-          assigned: toCategory.assigned + amount,
           available: toCategory.available + amount,
         });
       },
@@ -276,83 +269,8 @@ export class CategoriesService {
           available: defaultCategory.available + category.available,
         });
 
-        await categoryRepository.update(id, {
-          assigned: 0,
-          activity: 0,
-          available: 0,
-        });
-        await categoryRepository.softDelete(id);
+        await categoryRepository.delete(id);
       },
     );
-  }
-
-  async deleteForever(ids: string[], user: User) {
-    await this.categoryRepository.manager.transaction(async (manager) => {
-      const categoryRepository = manager.getRepository(Category);
-
-      const categories = await categoryRepository.find({
-        where: {
-          id: In(ids),
-          group: {
-            budget: {
-              user: { id: user.id },
-            },
-          },
-        },
-        withDeleted: true,
-      });
-
-      const foundIds = categories.map((category) => category.id);
-      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-      if (notFoundIds.length > 0) {
-        throw ApiException.notFound(this.t.tException('not_found', 'category'));
-      }
-
-      await categoryRepository.delete(ids);
-    });
-  }
-
-  async restoreCategories(ids: string[], user: User) {
-    await this.categoryRepository.manager.transaction(async (manager) => {
-      const categoryRepository = manager.getRepository(Category);
-
-      const categories = await categoryRepository.find({
-        where: {
-          id: In(ids),
-          group: {
-            budget: {
-              user: { id: user.id },
-            },
-          },
-        },
-        withDeleted: true,
-      });
-
-      const foundIds = categories.map((category) => category.id);
-      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-      if (notFoundIds.length > 0) {
-        throw ApiException.notFound(this.t.tException('not_found', 'category'));
-      }
-
-      await categoryRepository.restore(ids);
-    });
-  }
-
-  async setCategoryLimit(id: string, dto: CategoryLimitDto, user: User) {
-    const category = await this.getCategory(id, user);
-
-    const { limitAmount, limitResetPeriod } = dto;
-
-    const [periodStart, periodEnd] = calculatePeriod(limitResetPeriod);
-
-    const categorySpending = this.categorySpendingRepository.create({
-      category,
-      limitAmount,
-      limitResetPeriod,
-      periodStart,
-      periodEnd,
-    });
-
-    await this.categorySpendingRepository.save(categorySpending);
   }
 }

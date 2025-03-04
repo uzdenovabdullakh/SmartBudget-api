@@ -18,6 +18,7 @@ import { I18nInterceptor } from './interceptors/i18n.interceptor';
 import { HttpExceptionFilter } from './exceptions/exception.filter';
 import { TransactionsModule } from './modules/transactions.module';
 import { AnalyticModule } from './modules/analytic.module';
+import { CategorySpendgingModule } from './modules/category-limit.module';
 import { AiModule } from './modules/ai.module';
 
 @Module({
@@ -40,6 +41,7 @@ import { AiModule } from './modules/ai.module';
     BriefModule,
     TransactionsModule,
     AnalyticModule,
+    CategorySpendgingModule,
     AiModule,
   ],
   providers: [

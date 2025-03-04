@@ -13,7 +13,8 @@ import {
   UpdateAccountDto,
 } from 'src/validation/account.schema';
 import { PaginationQueryDto } from 'src/validation/pagination.schema';
-import { Equal, In, IsNull, Not, Repository } from 'typeorm';
+import { Equal, Not, Or, Repository } from 'typeorm';
+import { Category } from 'src/entities/category.entity';
 
 @Injectable()
 export class AccountsService {
@@ -140,24 +141,13 @@ export class AccountsService {
       .innerJoin('a.budget', 'b')
       .where('a.id = :id', { id: id })
       .andWhere('b.user.id = :userId', { userId: user.id })
-      .select(['a.id', 'a.name', 'a.type', 'a.amount'])
+      .select(['a.id', 'a.name', 'a.type', 'a.amount', 'b'])
       .getOne();
 
     if (!account) {
       throw ApiException.notFound(this.t.tException('not_found', 'account'));
     }
     return account;
-  }
-
-  async getRemovedAccounts(user: User) {
-    return await this.accountRepository
-      .createQueryBuilder('account')
-      .withDeleted()
-      .innerJoin('account.budget', 'budget')
-      .where('budget.user.id = :userId', { userId: user.id })
-      .andWhere('account.deletedAt IS NOT NULL')
-      .select(['account.id', 'account.name'])
-      .getMany();
   }
 
   async deleteAccount(id: string, user: User) {
@@ -177,92 +167,80 @@ export class AccountsService {
       throw ApiException.notFound(this.t.tException('not_found', 'account'));
     }
 
-    await this.accountRepository.softRemove(account);
-  }
-
-  async deleteForever(ids: string[], user: User) {
-    await this.accountRepository.manager.transaction(async (manager) => {
-      const accountRepository = manager.getRepository(Account);
-
-      const accounts = await accountRepository.find({
-        where: {
-          id: In(ids),
-          deletedAt: Not(IsNull()),
-          budget: {
-            user: {
-              id: user.id,
-            },
-          },
-        },
-        withDeleted: true,
-        relations: ['budget', 'budget.user'],
-      });
-
-      const foundIds = accounts.map((account) => account.id);
-      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-      if (notFoundIds.length > 0) {
-        throw ApiException.notFound(this.t.tException('not_found', 'account'));
-      }
-
-      await accountRepository.remove(accounts);
-    });
-  }
-
-  async restoreAccounts(ids: string[], user: User) {
-    await this.accountRepository.manager.transaction(async (manager) => {
-      const accountRepository = manager.getRepository(Account);
-
-      const accounts = await accountRepository.find({
-        where: {
-          id: In(ids),
-          deletedAt: Not(IsNull()),
-          budget: {
-            user: {
-              id: user.id,
-            },
-          },
-        },
-        withDeleted: true,
-        relations: ['budget', 'budget.user'],
-      });
-
-      const foundIds = accounts.map((account) => account.id);
-      const notFoundIds = ids.filter((id) => !foundIds.includes(id));
-      if (notFoundIds.length > 0) {
-        throw ApiException.notFound(this.t.tException('not_found', 'account'));
-      }
-
-      await accountRepository.recover(accounts);
-    });
+    await this.accountRepository.remove(account);
   }
 
   async updateAccount(id: string, dto: UpdateAccountDto, user: User) {
-    const { name } = dto;
-    await this.getUserAccount(id, user);
+    await this.accountRepository.manager.connection.transaction(
+      async (manager) => {
+        const currentAccount = await this.getUserAccount(id, user);
 
-    const accountExist = await this.accountRepository.findOne({
+        const categoryRepository = manager.getRepository(Category);
+        const accountRepository = manager.getRepository(Account);
+
+        if (dto.name) {
+          const accountExist = await this.accountRepository.findOne({
+            where: {
+              id: Not(id),
+              name: Equal(dto.name),
+              budget: {
+                user: {
+                  id: user.id,
+                },
+              },
+            },
+            withDeleted: true,
+          });
+          if (accountExist) {
+            throw ApiException.conflictError(
+              this.t.tException('already_exists', 'account'),
+            );
+          }
+        }
+
+        await accountRepository.update(
+          {
+            id,
+          },
+          dto,
+        );
+        if (dto.amount) {
+          const amountImpact = dto.amount - currentAccount.amount;
+
+          await this.updateDefaultCategory(
+            currentAccount,
+            categoryRepository,
+            amountImpact,
+          );
+        }
+      },
+    );
+  }
+
+  private async updateDefaultCategory(
+    account: Account,
+    categoryRepository: Repository<Category>,
+    amountImpact: number,
+  ) {
+    const defaultCategory = await categoryRepository.findOne({
       where: {
-        id: Not(id),
-        name: Equal(name),
-        budget: {
-          user: {
-            id: user.id,
+        name: Or(
+          Equal('Inflow: Ready to Assign'),
+          Equal('Приток: Готов к перераспределению'),
+        ),
+        group: {
+          budget: {
+            id: account.budget.id,
           },
         },
       },
-      withDeleted: true,
     });
-    if (accountExist) {
-      throw ApiException.conflictError(
-        this.t.tException('already_exists', 'account'),
-      );
-    }
 
-    await this.accountRepository.update(
+    await categoryRepository.update(
+      { id: defaultCategory.id },
       {
-        id,
+        available: defaultCategory.available + amountImpact,
       },
-      { name },
     );
   }
 }

@@ -1,5 +1,4 @@
 import i18next from 'i18next';
-import { Period } from 'src/constants/enums';
 import { z } from 'src/utils/zod-map';
 
 export const CategorySchema = z
@@ -11,13 +10,6 @@ export const CategorySchema = z
     groupId: z
       .string()
       .uuid(i18next.t('validation.Invalid uuid', { ns: 'common' })),
-  })
-  .required();
-
-export const CategoryLimitSchema = z
-  .object({
-    limitAmount: z.number().positive().min(1),
-    limitResetPeriod: z.nativeEnum(Period),
   })
   .required();
 
@@ -56,7 +48,6 @@ export const UpdateCategorySchema = CategorySchema.partial();
 
 export type CreateCategoryDto = z.infer<typeof CreateCategorySchema>;
 export type UpdateCategoryDto = z.infer<typeof UpdateCategorySchema>;
-export type CategoryLimitDto = z.infer<typeof CategoryLimitSchema>;
 export type AssigningChangeDto = z.infer<typeof AssigningChangeSchema>;
 export type MoveAvaliableDto = z.infer<typeof MoveAvaliableSchema>;
 export type ReorderCategoriesDto = z.infer<typeof ReorderCategoriesSchema>;

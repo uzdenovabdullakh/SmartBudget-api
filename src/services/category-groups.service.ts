@@ -7,10 +7,12 @@ import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import {
   CreateCategoryGroupDto,
+  GetCategoryGroup,
   ReorderCategoryGroupsDto,
   UpdateCategoryGroupDto,
 } from 'src/validation/category-group.schema';
-import { Equal, IsNull, Not, Repository } from 'typeorm';
+import { Equal, Not, Repository } from 'typeorm';
+import { CategoryFilter } from 'src/constants/enums';
 
 @Injectable()
 export class CategoryGroupsService {
@@ -46,14 +48,16 @@ export class CategoryGroupsService {
 
   async getGroupsWithCategories(
     id: string,
-    withDefault: boolean = false,
+    query: GetCategoryGroup,
     user: User,
   ) {
+    const { default: withDefault = false, filter } = query;
     const translateDefaultGroup = this.t.tCategories('Inflow', 'groups');
 
     const queryBuilder = this.categoryGroupRepository
       .createQueryBuilder('categoryGroup')
       .leftJoinAndSelect('categoryGroup.categories', 'categories')
+      .leftJoinAndSelect('categories.categorySpending', 'categoryLimit')
       .leftJoin('categoryGroup.budget', 'budget')
       .leftJoin('budget.user', 'user')
       .where('budget.id = :id', { id })
@@ -66,8 +70,10 @@ export class CategoryGroupsService {
         'categories.name',
         'categories.available',
         'categories.assigned',
-        'categories.activity',
+        'categories.spent',
         'categories.order',
+        'categoryLimit.limitAmount',
+        'categoryLimit.spentAmount',
       ])
       .orderBy('categoryGroup.order', 'ASC')
       .addOrderBy('categoryGroup.createdAt', 'ASC')
@@ -79,36 +85,24 @@ export class CategoryGroupsService {
       });
     }
 
+    if (filter === CategoryFilter.SPENT) {
+      queryBuilder.andWhere('categories.spent > 0');
+    }
+    if (filter === CategoryFilter.AVAILABLE) {
+      queryBuilder
+        .andWhere('categories.spent <= 0')
+        .andWhere('categories.available > 0');
+    }
+    if (filter === CategoryFilter.ASSIGNED) {
+      queryBuilder.andWhere('categories.assigned > 0');
+    }
+    if (filter === CategoryFilter.LIMIT_REACHED) {
+      queryBuilder.andWhere(
+        'categoryLimit.spentAmount >= categoryLimit.limitAmount',
+      );
+    }
+
     const categories = await queryBuilder.getMany();
-
-    return categories;
-  }
-
-  async getRemovedCategoriesGroup(user: User) {
-    const categories = await this.categoryGroupRepository.find({
-      where: {
-        deletedAt: Not(IsNull()),
-        budget: {
-          user: {
-            id: user.id,
-          },
-        },
-      },
-      select: {
-        id: true,
-        name: true,
-        budget: {
-          id: true,
-          name: true,
-        },
-        categories: {
-          id: true,
-          name: true,
-        },
-      },
-      relations: ['categories'],
-      withDeleted: true,
-    });
 
     return categories;
   }
@@ -136,37 +130,8 @@ export class CategoryGroupsService {
         );
       }
 
-      await categoryGroupRepository.softRemove(categoryGroupExist);
-      await categoryRepository.softRemove(categoryGroupExist.categories);
-    });
-  }
-
-  async restoreCategoryGroup(id: string, user: User) {
-    await this.categoryGroupRepository.manager.transaction(async (manager) => {
-      const categoryGroupRepository = manager.getRepository(CategoryGroup);
-      const categoryRepository = manager.getRepository(Category);
-
-      const categoryGroupExist = await categoryGroupRepository.findOne({
-        where: {
-          id,
-          budget: {
-            user: {
-              id: user.id,
-            },
-          },
-        },
-        relations: ['categories'],
-        withDeleted: true,
-      });
-
-      if (!categoryGroupExist) {
-        throw ApiException.notFound(
-          this.t.tException('not_found', 'category_group'),
-        );
-      }
-
-      await categoryGroupRepository.restore(id);
-      await categoryRepository.recover(categoryGroupExist.categories);
+      await categoryGroupRepository.remove(categoryGroupExist);
+      await categoryRepository.remove(categoryGroupExist.categories);
     });
   }
 
