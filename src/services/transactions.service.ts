@@ -334,6 +334,7 @@ export class TransactionsService {
           );
         }
 
+        // FIXME исправить обновление категории при смене категории у транзакции
         if (hasCategoryChanged(currentTransaction, newTransaction)) {
           await this.updateCategory({
             categoryRepository,
@@ -384,25 +385,58 @@ export class TransactionsService {
     category: Category;
     amountImpact: number;
     categorySpendingRepository?: Repository<CategorySpending>;
-    type?: TransactionType;
+    type: TransactionType;
   }) {
     if (!category) return;
-    await categoryRepository.update(
-      { id: category.id },
-      {
-        available: category.available + amountImpact,
-        spent:
-          type === TransactionType.EXPENSE
-            ? category.spent + amountImpact
-            : undefined,
-      },
-    );
 
-    if (category.categorySpending && type === TransactionType.EXPENSE) {
-      const { categorySpending } = category;
-      await categorySpendingRepository.update(categorySpending.id, {
-        spentAmount: categorySpending.spentAmount + amountImpact,
-      });
+    if (type === TransactionType.EXPENSE) {
+      if (category.assigned > 0) {
+        const amount = Math.abs(amountImpact);
+        const assignedReduction = Math.min(amount, category.assigned);
+        const remainingImpact = amount - assignedReduction;
+        const availableChange = category.available - remainingImpact;
+        const spentIncrease =
+          availableChange < 0 ? Math.abs(availableChange) : 0;
+
+        await categoryRepository.update(
+          { id: category.id },
+          {
+            assigned: Math.max(category.assigned - amount, 0),
+            available: availableChange,
+            spent: category.spent + spentIncrease,
+          },
+        );
+
+        return;
+      }
+
+      const spentRemainingImpact =
+        category.available > 0
+          ? Math.abs(category.available + amountImpact)
+          : Math.abs(amountImpact);
+
+      await categoryRepository.update(
+        { id: category.id },
+        {
+          available: category.available + amountImpact,
+          spent: category.spent + spentRemainingImpact,
+        },
+      );
+
+      if (category.categorySpending) {
+        const { categorySpending } = category;
+        await categorySpendingRepository.update(categorySpending.id, {
+          spentAmount: categorySpending.spentAmount + amountImpact,
+        });
+      }
+    } else {
+      await categoryRepository.update(
+        { id: category.id },
+        {
+          available: category.available + amountImpact,
+          spent: Math.max(category.spent - amountImpact, 0),
+        },
+      );
     }
   }
 
