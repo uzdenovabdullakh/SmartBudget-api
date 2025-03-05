@@ -8,7 +8,6 @@ import {
   ManyToOne,
 } from 'typeorm';
 import { Timestamps } from './timestamps.entity';
-import { Goal } from './goal.entity';
 import { Transaction } from './transaction.entity';
 import { CategorySpending } from './category-spending.entity';
 import { CategoryGroup } from './category-group.entity';
@@ -59,13 +58,6 @@ export class Category extends Timestamps {
   @JoinColumn({ name: 'group_id' })
   group: CategoryGroup;
 
-  @OneToOne(() => Goal, { onDelete: 'SET NULL', nullable: true })
-  @JoinColumn({
-    name: 'goal_id',
-    foreignKeyConstraintName: 'fk_category_to_goal',
-  })
-  goal: Goal;
-
   @OneToMany(() => Transaction, (transaction) => transaction.category)
   transactions: Transaction[];
 
@@ -75,9 +67,8 @@ export class Category extends Timestamps {
   )
   categorySpending: CategorySpending;
 
-  constructor(name: string, group: string, goal?: Goal) {
+  constructor(name: string) {
     super();
     this.name = name;
-    this.goal = goal;
   }
 }
