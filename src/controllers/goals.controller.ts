@@ -2,12 +2,12 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
   Req,
-  UsePipes,
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { GoalsService } from 'src/services/goals.service';
@@ -27,13 +27,21 @@ export class GoalsController {
     private readonly t: TranslationService,
   ) {}
 
-  @Post()
-  @UsePipes(new ZodValidationPipe(CreateGoalSchema))
-  async createGoal(
-    @Body() dto: CreateGoalDto,
+  @Get(':id')
+  async getGoals(
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticationRequest,
   ) {
-    await this.goalsService.createGoal(dto, req.user);
+    return await this.goalsService.getGoals(id, req.user);
+  }
+
+  @Post(':id')
+  async createGoal(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(CreateGoalSchema)) dto: CreateGoalDto,
+    @Req() req: AuthenticationRequest,
+  ) {
+    await this.goalsService.createGoal({ budgetId: id, ...dto }, req.user);
     return {
       message: this.t.tMessage('created', 'goal'),
     };

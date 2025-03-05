@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TranslationService } from './translation.service';
 import { Budget } from 'src/entities/budget.entity';
-import { Category } from 'src/entities/category.entity';
 import { Goal } from 'src/entities/goal.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
@@ -17,13 +16,12 @@ export class GoalsService {
     private readonly t: TranslationService,
   ) {}
 
-  async createGoal(dto: CreateGoalDto, user: User) {
+  async createGoal(dto: { budgetId: string } & CreateGoalDto, user: User) {
     await this.goalRepository.manager.transaction(async (manager) => {
       const goalRepository = manager.getRepository(Goal);
       const budgetRepository = manager.getRepository(Budget);
-      const categoryRepository = manager.getRepository(Category);
 
-      const { budgetId, categoryId } = dto;
+      const { budgetId } = dto;
 
       const goal = goalRepository.create(dto);
 
@@ -41,31 +39,6 @@ export class GoalsService {
         }
 
         goal.budget = budget;
-      }
-
-      if (categoryId) {
-        const category = await categoryRepository.findOne({
-          where: {
-            id: categoryId,
-            group: {
-              budget: {
-                user: {
-                  id: user.id,
-                },
-              },
-            },
-          },
-          relations: ['user'],
-        });
-
-        if (!category) {
-          throw ApiException.notFound(
-            this.t.tException('not_found', 'category'),
-          );
-        }
-
-        category.goal = goal;
-        await categoryRepository.save(category);
       }
 
       await goalRepository.save(goal);
@@ -88,6 +61,32 @@ export class GoalsService {
     }
 
     return goal;
+  }
+
+  async getGoals(id: string, user: User) {
+    const goals = await this.goalRepository.find({
+      where: {
+        budget: {
+          id,
+          user: {
+            id: user.id,
+          },
+        },
+      },
+      select: [
+        'id',
+        'achieveDate',
+        'currentAmount',
+        'name',
+        'targetAmount',
+        'updatedAt',
+      ],
+      order: {
+        updatedAt: 'DESC',
+      },
+    });
+
+    return goals;
   }
 
   async updateGoal(id: string, dto: UpdateGoalDto, user: User) {
