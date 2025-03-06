@@ -5,9 +5,14 @@ import { Budget } from 'src/entities/budget.entity';
 import { Goal } from 'src/entities/goal.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
-import { CreateGoalDto, UpdateGoalDto } from 'src/validation/goal.schema';
+import {
+  CreateGoalDto,
+  GetGoalQuery,
+  UpdateGoalDto,
+} from 'src/validation/goal.schema';
 import { Repository } from 'typeorm';
 import { calculateSavings } from 'src/utils/helpers';
+import { GetGoalFilter } from 'src/constants/enums';
 
 @Injectable()
 export class GoalsService {
@@ -72,28 +77,31 @@ export class GoalsService {
     return { goal, savings };
   }
 
-  async getGoals(id: string, user: User) {
-    const goals = await this.goalRepository.find({
-      where: {
-        budget: {
-          id,
-          user: {
-            id: user.id,
-          },
-        },
-      },
-      select: [
-        'id',
-        'achieveDate',
-        'currentAmount',
-        'name',
-        'targetAmount',
-        'updatedAt',
-      ],
-      order: {
-        updatedAt: 'DESC',
-      },
-    });
+  async getGoals(id: string, query: GetGoalQuery, user: User) {
+    const { filter } = query;
+
+    const queryBuilder = this.goalRepository
+      .createQueryBuilder('goal')
+      .leftJoinAndSelect('goal.budget', 'budget')
+      .where('budget.id = :budgetId', { budgetId: id })
+      .andWhere('budget.user.id = :userId', { userId: user.id })
+      .select([
+        'goal.id',
+        'goal.achieveDate',
+        'goal.currentAmount',
+        'goal.name',
+        'goal.targetAmount',
+        'goal.updatedAt',
+      ])
+      .orderBy('goal.updatedAt', 'DESC');
+
+    if (filter === GetGoalFilter.ACTIVE) {
+      queryBuilder.andWhere('goal.currentAmount < goal.targetAmount');
+    } else if (filter === GetGoalFilter.REACHED) {
+      queryBuilder.andWhere('goal.currentAmount >= goal.targetAmount');
+    }
+
+    const goals = await queryBuilder.getMany();
 
     return goals;
   }

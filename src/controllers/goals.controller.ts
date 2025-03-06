@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
@@ -16,6 +17,8 @@ import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
   CreateGoalDto,
   CreateGoalSchema,
+  GetGoalQuery,
+  GetGoalQuerySchema,
   UpdateGoalDto,
   UpdateGoalSchema,
 } from 'src/validation/goal.schema';
@@ -29,10 +32,11 @@ export class GoalsController {
 
   @Get('/all/:id')
   async getGoals(
+    @Query(new ZodValidationPipe(GetGoalQuerySchema)) query: GetGoalQuery,
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticationRequest,
   ) {
-    return await this.goalsService.getGoals(id, req.user);
+    return await this.goalsService.getGoals(id, query, req.user);
   }
 
   @Get(':id')
