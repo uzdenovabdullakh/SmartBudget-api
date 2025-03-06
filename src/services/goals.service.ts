@@ -7,6 +7,7 @@ import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
 import { CreateGoalDto, UpdateGoalDto } from 'src/validation/goal.schema';
 import { Repository } from 'typeorm';
+import { calculateSavings } from 'src/utils/helpers';
 
 @Injectable()
 export class GoalsService {
@@ -55,12 +56,20 @@ export class GoalsService {
           },
         },
       },
+      select: ['id', 'achieveDate', 'currentAmount', 'name', 'targetAmount'],
+      relations: ['budget'],
     });
     if (!goal) {
       throw ApiException.notFound(this.t.tException('not_found', 'goal'));
     }
 
-    return goal;
+    const savings = calculateSavings({
+      target: goal.targetAmount,
+      alreadySaved: goal.currentAmount,
+      achieveDate: new Date(goal.achieveDate),
+    });
+
+    return { goal, savings };
   }
 
   async getGoals(id: string, user: User) {

@@ -196,3 +196,38 @@ export const hasCategoryChanged = (
 ): boolean => {
   return currentTransaction.category?.id !== newTransaction.category?.id;
 };
+
+export const calculateSavings = ({
+  target,
+  alreadySaved,
+  achieveDate,
+}: {
+  target: number;
+  alreadySaved: number;
+  achieveDate: Date;
+}) => {
+  const currentDate = new Date();
+
+  const timeDifference = achieveDate.getTime() - currentDate.getTime();
+
+  const daysRemaining = Math.ceil(timeDifference / (1000 * 3600 * 24));
+
+  const remainingAmount = target - alreadySaved;
+
+  if (remainingAmount <= 0) {
+    return { daily: 0, weekly: 0, monthly: 0 };
+  }
+
+  const daily = remainingAmount / daysRemaining;
+  const weekly = daily * 7;
+  const averageDaysCountInMonth = 30.44;
+  const monthly = daily * averageDaysCountInMonth;
+
+  const roundToCents = (num: number) => Number(num.toFixed(2));
+
+  return {
+    daily: roundToCents(daily),
+    weekly: roundToCents(weekly),
+    monthly: roundToCents(monthly),
+  };
+};

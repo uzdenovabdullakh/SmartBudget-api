@@ -27,12 +27,20 @@ export class GoalsController {
     private readonly t: TranslationService,
   ) {}
 
-  @Get(':id')
+  @Get('/all/:id')
   async getGoals(
     @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticationRequest,
   ) {
     return await this.goalsService.getGoals(id, req.user);
+  }
+
+  @Get(':id')
+  async getGoal(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticationRequest,
+  ) {
+    return await this.goalsService.getGoal(id, req.user);
   }
 
   @Post(':id')
