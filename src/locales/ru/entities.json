@@ -12,5 +12,6 @@
   "restore_account": "восстановление аккаунта",
   "category_limit": "Лимит по категории",
   "transaction": "Транзакция",
-  "transaction_plural": "Транзакции"
+  "transaction_plural": "Транзакции",
+  "auto_replenishment": "Авто-пополнение"
 }

@@ -12,5 +12,6 @@
   "restore_account": "Restore account",
   "category_limit": "Category limit",
   "transaction": "Transaction",
-  "transaction_plural": "Transactions"
+  "transaction_plural": "Transactions",
+  "auto_replenishment": "Auto Replenishment"
 }
