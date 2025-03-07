@@ -83,6 +83,7 @@ export class GoalsService {
     const queryBuilder = this.goalRepository
       .createQueryBuilder('goal')
       .leftJoinAndSelect('goal.budget', 'budget')
+      .leftJoinAndSelect('goal.autoReplenishments', 'autoReplenishments')
       .where('budget.id = :budgetId', { budgetId: id })
       .andWhere('budget.user.id = :userId', { userId: user.id })
       .select([
@@ -92,6 +93,8 @@ export class GoalsService {
         'goal.name',
         'goal.targetAmount',
         'goal.updatedAt',
+        'autoReplenishments.id',
+        'autoReplenishments.percentage',
       ])
       .orderBy('goal.updatedAt', 'DESC');
 
