@@ -20,6 +20,7 @@ import { TransactionsModule } from './modules/transactions.module';
 import { AnalyticModule } from './modules/analytic.module';
 import { CategorySpendgingModule } from './modules/category-limit.module';
 import { AiModule } from './modules/ai.module';
+import { AutoReplenishmentModule } from './modules/auto-replenishment.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AiModule } from './modules/ai.module';
     AnalyticModule,
     CategorySpendgingModule,
     AiModule,
+    AutoReplenishmentModule,
   ],
   providers: [
     Logger,
