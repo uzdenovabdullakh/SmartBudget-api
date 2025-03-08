@@ -18,6 +18,8 @@ import {
   handleRemoveExpense,
   handleRemoveIncome,
 } from 'src/utils/category-values-utils';
+import { AutoReplenishment } from 'src/entities/auto-replenishment.entity';
+import { Goal } from 'src/entities/goal.entity';
 
 @EventSubscriber()
 export class TransactionSubscriber
@@ -29,19 +31,25 @@ export class TransactionSubscriber
 
   async afterInsert(event: InsertEvent<Transaction>) {
     const { entity, manager } = event;
-    await this.updateAccountAndCategory(entity, manager);
+    await this.updateRelationEntities(entity, manager);
   }
 
   async afterRemove(event: RemoveEvent<Transaction>) {
     const { entity, manager } = event;
-    await this.updateAccountAndCategory(entity, manager, true);
+    await this.updateRelationEntities(entity, manager, true);
   }
 
-  private async updateCategory(
-    transaction: Transaction,
-    manager: EntityManager,
-    isRemoved: boolean = false,
-  ) {
+  private async updateCategory({
+    transaction,
+    manager,
+    autoReplenishment,
+    isRemoved = false,
+  }: {
+    transaction: Transaction;
+    manager: EntityManager;
+    autoReplenishment?: AutoReplenishment[];
+    isRemoved?: boolean;
+  }) {
     if (!transaction.category) {
       return;
     }
@@ -61,7 +69,14 @@ export class TransactionSubscriber
     const type = transaction.inflow
       ? TransactionType.INCOME
       : TransactionType.EXPENSE;
-    const amount = transaction.inflow || transaction.outflow || 0;
+    let amount = transaction.inflow || transaction.outflow || 0;
+
+    if (autoReplenishment.length && type === TransactionType.INCOME) {
+      for (const ar of autoReplenishment) {
+        const amountToAdd = (amount * ar.percentage) / 100;
+        amount -= amountToAdd;
+      }
+    }
 
     if (isRemoved) {
       if (type === TransactionType.INCOME) {
@@ -88,7 +103,7 @@ export class TransactionSubscriber
     }
   }
 
-  private async updateAccountAndCategory(
+  private async updateRelationEntities(
     transaction: Transaction,
     manager: EntityManager,
     isRemoved: boolean = false,
@@ -96,6 +111,9 @@ export class TransactionSubscriber
     await manager.connection.transaction(async (manager) => {
       const accountRepository = manager.getRepository(Account);
       const categoryRepository = manager.getRepository(Category);
+      const autoReplenishmentRepository =
+        manager.getRepository(AutoReplenishment);
+      const goalRepository = manager.getRepository(Goal);
 
       const account = await accountRepository.findOne({
         where: { id: transaction.account.id },
@@ -106,9 +124,31 @@ export class TransactionSubscriber
         ? TransactionType.INCOME
         : TransactionType.EXPENSE;
 
-      const amount = isRemoved
+      let amount = isRemoved
         ? -(transaction.inflow || transaction.outflow || 0) // Если транзакция удаляется, инвертируем значение
         : transaction.inflow || transaction.outflow || 0; // Иначе используем текущее значение
+
+      const autoReplenishment = await autoReplenishmentRepository.find({
+        where: {
+          goal: {
+            budget: {
+              id: account.budget.id,
+            },
+          },
+        },
+        relations: ['goal', 'goal.budget'],
+      });
+
+      if (autoReplenishment.length && type === TransactionType.INCOME) {
+        for (const ar of autoReplenishment) {
+          const amountToAdd = (amount * ar.percentage) / 100;
+          amount -= amountToAdd;
+
+          await goalRepository.update(ar.goal.id, {
+            currentAmount: ar.goal.currentAmount + amountToAdd,
+          });
+        }
+      }
 
       await accountRepository.update(
         { id: account.id },
@@ -140,14 +180,19 @@ export class TransactionSubscriber
           {
             available:
               type === TransactionType.INCOME
-                ? account.amount + amount
-                : account.amount - amount,
+                ? defaultCategory.available + amount
+                : defaultCategory.available - amount,
           },
         );
       }
 
       if (transaction.category) {
-        await this.updateCategory(transaction, manager, isRemoved);
+        await this.updateCategory({
+          transaction,
+          autoReplenishment,
+          manager,
+          isRemoved,
+        });
       }
     });
   }

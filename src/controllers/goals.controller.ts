@@ -2,12 +2,13 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Req,
-  UsePipes,
 } from '@nestjs/common';
 import { ZodValidationPipe } from 'src/pipes/validation-pipe';
 import { GoalsService } from 'src/services/goals.service';
@@ -16,6 +17,8 @@ import { AuthenticationRequest } from 'src/types/authentication-request.types';
 import {
   CreateGoalDto,
   CreateGoalSchema,
+  GetGoalQuery,
+  GetGoalQuerySchema,
   UpdateGoalDto,
   UpdateGoalSchema,
 } from 'src/validation/goal.schema';
@@ -27,13 +30,30 @@ export class GoalsController {
     private readonly t: TranslationService,
   ) {}
 
-  @Post()
-  @UsePipes(new ZodValidationPipe(CreateGoalSchema))
-  async createGoal(
-    @Body() dto: CreateGoalDto,
+  @Get('/all/:id')
+  async getGoals(
+    @Query(new ZodValidationPipe(GetGoalQuerySchema)) query: GetGoalQuery,
+    @Param('id', ParseUUIDPipe) id: string,
     @Req() req: AuthenticationRequest,
   ) {
-    await this.goalsService.createGoal(dto, req.user);
+    return await this.goalsService.getGoals(id, query, req.user);
+  }
+
+  @Get(':id')
+  async getGoal(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Req() req: AuthenticationRequest,
+  ) {
+    return await this.goalsService.getGoal(id, req.user);
+  }
+
+  @Post(':id')
+  async createGoal(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body(new ZodValidationPipe(CreateGoalSchema)) dto: CreateGoalDto,
+    @Req() req: AuthenticationRequest,
+  ) {
+    await this.goalsService.createGoal({ budgetId: id, ...dto }, req.user);
     return {
       message: this.t.tMessage('created', 'goal'),
     };

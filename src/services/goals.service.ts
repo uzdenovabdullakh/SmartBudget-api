@@ -2,12 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TranslationService } from './translation.service';
 import { Budget } from 'src/entities/budget.entity';
-import { Category } from 'src/entities/category.entity';
 import { Goal } from 'src/entities/goal.entity';
 import { User } from 'src/entities/user.entity';
 import { ApiException } from 'src/exceptions/api.exception';
-import { CreateGoalDto, UpdateGoalDto } from 'src/validation/goal.schema';
+import {
+  CreateGoalDto,
+  GetGoalQuery,
+  UpdateGoalDto,
+} from 'src/validation/goal.schema';
 import { Repository } from 'typeorm';
+import { calculateSavings } from 'src/utils/helpers';
+import { GetGoalFilter } from 'src/constants/enums';
 
 @Injectable()
 export class GoalsService {
@@ -17,13 +22,12 @@ export class GoalsService {
     private readonly t: TranslationService,
   ) {}
 
-  async createGoal(dto: CreateGoalDto, user: User) {
+  async createGoal(dto: { budgetId: string } & CreateGoalDto, user: User) {
     await this.goalRepository.manager.transaction(async (manager) => {
       const goalRepository = manager.getRepository(Goal);
       const budgetRepository = manager.getRepository(Budget);
-      const categoryRepository = manager.getRepository(Category);
 
-      const { budgetId, categoryId } = dto;
+      const { budgetId } = dto;
 
       const goal = goalRepository.create(dto);
 
@@ -43,31 +47,6 @@ export class GoalsService {
         goal.budget = budget;
       }
 
-      if (categoryId) {
-        const category = await categoryRepository.findOne({
-          where: {
-            id: categoryId,
-            group: {
-              budget: {
-                user: {
-                  id: user.id,
-                },
-              },
-            },
-          },
-          relations: ['user'],
-        });
-
-        if (!category) {
-          throw ApiException.notFound(
-            this.t.tException('not_found', 'category'),
-          );
-        }
-
-        category.goal = goal;
-        await categoryRepository.save(category);
-      }
-
       await goalRepository.save(goal);
     });
   }
@@ -82,12 +61,52 @@ export class GoalsService {
           },
         },
       },
+      select: ['id', 'achieveDate', 'currentAmount', 'name', 'targetAmount'],
+      relations: ['budget'],
     });
     if (!goal) {
       throw ApiException.notFound(this.t.tException('not_found', 'goal'));
     }
 
-    return goal;
+    const savings = calculateSavings({
+      target: goal.targetAmount,
+      alreadySaved: goal.currentAmount,
+      achieveDate: new Date(goal.achieveDate),
+    });
+
+    return { goal, savings };
+  }
+
+  async getGoals(id: string, query: GetGoalQuery, user: User) {
+    const { filter } = query;
+
+    const queryBuilder = this.goalRepository
+      .createQueryBuilder('goal')
+      .leftJoinAndSelect('goal.budget', 'budget')
+      .leftJoinAndSelect('goal.autoReplenishments', 'autoReplenishments')
+      .where('budget.id = :budgetId', { budgetId: id })
+      .andWhere('budget.user.id = :userId', { userId: user.id })
+      .select([
+        'goal.id',
+        'goal.achieveDate',
+        'goal.currentAmount',
+        'goal.name',
+        'goal.targetAmount',
+        'goal.updatedAt',
+        'autoReplenishments.id',
+        'autoReplenishments.percentage',
+      ])
+      .orderBy('goal.updatedAt', 'DESC');
+
+    if (filter === GetGoalFilter.ACTIVE) {
+      queryBuilder.andWhere('goal.currentAmount < goal.targetAmount');
+    } else if (filter === GetGoalFilter.REACHED) {
+      queryBuilder.andWhere('goal.currentAmount >= goal.targetAmount');
+    }
+
+    const goals = await queryBuilder.getMany();
+
+    return goals;
   }
 
   async updateGoal(id: string, dto: UpdateGoalDto, user: User) {

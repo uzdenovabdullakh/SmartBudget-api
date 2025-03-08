@@ -37,3 +37,8 @@ export enum CategoryFilter {
   LIMIT_REACHED = 'limit_reached',
   ASSIGNED = 'assigned',
 }
+
+export enum GetGoalFilter {
+  ACTIVE = 'active',
+  REACHED = 'reached',
+}

@@ -7,5 +7,6 @@
   "restored_plural": "{entity} успешно восстановлены",
   "confirmed": "{entity} успешно подтвержден",
   "email_sent": "Письмо {entity} отправлено",
-  "imported": "{entity} успешно импортированы"
+  "imported": "{entity} успешно импортированы",
+  "deactivate": "{entity} успешно деактивирована"
 }

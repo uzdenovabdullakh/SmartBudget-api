@@ -8,11 +8,10 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Timestamps } from './timestamps.entity';
-import { Period } from 'src/constants/enums';
 import { Budget } from './budget.entity';
 import { Reminder } from './reminder.entity';
-import { Category } from './category.entity';
 import { NumericTransformer } from 'src/utils/numeric-transformer';
+import { AutoReplenishment } from './auto-replenishment.entity';
 
 @Entity({ name: 'goals' })
 export class Goal extends Timestamps {
@@ -54,14 +53,6 @@ export class Goal extends Timestamps {
   })
   achieveDate: Date;
 
-  @Column({
-    type: 'enum',
-    enum: Period,
-    enumName: 'enum_period',
-    nullable: false,
-  })
-  period: Period;
-
   @ManyToOne(() => Budget, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({
     name: 'budget_id',
@@ -72,14 +63,13 @@ export class Goal extends Timestamps {
   @OneToMany(() => Reminder, (reminder) => reminder.goal)
   reminder: Reminder[];
 
-  @OneToOne(() => Category, (category) => category.goal)
-  category: Category;
+  @OneToOne(() => AutoReplenishment, (ar) => ar.goal)
+  autoReplenishments: AutoReplenishment;
 
   constructor(
     targetAmount: number,
     achieveDate: Date,
     budget: Budget,
-    period: Period,
     name?: string,
     currentAmount?: number,
   ) {
@@ -87,7 +77,6 @@ export class Goal extends Timestamps {
     this.targetAmount = targetAmount;
     this.achieveDate = achieveDate;
     this.budget = budget;
-    this.period = period;
     this.name = name || null;
     this.currentAmount = currentAmount || 0;
   }
