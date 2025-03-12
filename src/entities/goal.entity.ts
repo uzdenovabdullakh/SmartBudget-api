@@ -3,13 +3,11 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   OneToOne,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { Timestamps } from './timestamps.entity';
 import { Budget } from './budget.entity';
-import { Reminder } from './reminder.entity';
 import { NumericTransformer } from 'src/utils/numeric-transformer';
 import { AutoReplenishment } from './auto-replenishment.entity';
 
@@ -59,9 +57,6 @@ export class Goal extends Timestamps {
     foreignKeyConstraintName: 'fk_goals_to_budget',
   })
   budget: Budget;
-
-  @OneToMany(() => Reminder, (reminder) => reminder.goal)
-  reminder: Reminder[];
 
   @OneToOne(() => AutoReplenishment, (ar) => ar.goal)
   autoReplenishments: AutoReplenishment;

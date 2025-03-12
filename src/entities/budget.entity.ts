@@ -9,7 +9,6 @@ import {
 import { Timestamps } from './timestamps.entity';
 import { User } from './user.entity';
 import { Account } from './account.entity';
-import { Debt } from './debt.entity';
 import { Goal } from './goal.entity';
 import { Analytic } from './analytic.entity';
 import { BudgetSettings } from 'src/validation/budget.schema';
@@ -39,9 +38,6 @@ export class Budget extends Timestamps {
 
   @OneToMany(() => Account, (account) => account.budget)
   accounts: Account[];
-
-  @OneToMany(() => Debt, (debt) => debt.budget)
-  debts: Debt[];
 
   @OneToMany(() => Goal, (goal) => goal.budget)
   goals: Goal[];

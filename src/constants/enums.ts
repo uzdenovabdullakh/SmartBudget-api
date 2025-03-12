@@ -20,12 +20,6 @@ export enum Period {
   NONE = 'none',
 }
 
-export enum ReminderEntityType {
-  GOAL = 'goal',
-  DEBT = 'debt',
-  CATEGORY_LIMIT = 'category_limit',
-}
-
 export enum TransactionType {
   INCOME = 'income',
   EXPENSE = 'expense',
