@@ -22,13 +22,15 @@ export const handleRemoveIncome = (
   let remainingAmount = amount;
 
   if (category.available > 0) {
-    const { adjusted, remaining } = adjustValue(category.available, amount);
-    category.available = adjusted;
+    const { remaining } = adjustValue(category.available, amount);
+    category.available -= remainingAmount;
     remainingAmount = remaining;
+  } else {
+    category.available -= remainingAmount;
   }
 
   if (remainingAmount > 0) {
-    category.spent = Math.max(0, category.spent - remainingAmount);
+    category.spent = Math.max(0, category.spent + remainingAmount);
   }
 };
 
@@ -36,15 +38,12 @@ export const handleRemoveExpense = (
   category: CategoryEntity,
   amount: number,
 ): void => {
-  let remainingAmount = amount;
-
   if (category.spent > 0) {
-    const { adjusted, remaining } = adjustValue(category.spent, amount);
+    const { adjusted } = adjustValue(category.spent, amount);
     category.spent = adjusted;
-    remainingAmount = remaining;
   }
 
-  category.available += remainingAmount;
+  category.available += amount;
   category.spent = Math.max(0, category.spent - amount);
 };
 
@@ -52,17 +51,11 @@ export const handleInsertIncome = (
   category: CategoryEntity,
   amount: number,
 ): void => {
-  let remainingAmount = amount;
-
   if (category.spent > 0) {
-    const { adjusted, remaining } = adjustValue(category.spent, amount);
+    const { adjusted } = adjustValue(category.spent, amount);
     category.spent = adjusted;
-    remainingAmount = remaining;
   }
-
-  if (remainingAmount > 0) {
-    category.available += remainingAmount;
-  }
+  category.available += amount;
 };
 
 export const handleInsertExpense = (
@@ -80,7 +73,7 @@ export const handleInsertExpense = (
   const overspending =
     category.available >= 0
       ? Math.max(0, remainingAmount - category.available)
-      : amount;
+      : remainingAmount;
   category.spent += overspending;
   category.available -= remainingAmount;
 };
