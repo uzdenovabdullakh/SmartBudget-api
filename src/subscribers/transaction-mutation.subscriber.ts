@@ -73,8 +73,10 @@ export class TransactionSubscriber
 
     if (autoReplenishment.length && type === TransactionType.INCOME) {
       for (const ar of autoReplenishment) {
-        const amountToAdd = (amount * ar.percentage) / 100;
-        amount -= amountToAdd;
+        if (amount > 0) {
+          const amountToAdd = (amount * ar.percentage) / 100;
+          amount -= amountToAdd;
+        }
       }
     }
 
