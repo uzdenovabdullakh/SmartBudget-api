@@ -141,12 +141,13 @@ export class TransactionSubscriber
 
       if (autoReplenishment.length && type === TransactionType.INCOME) {
         for (const ar of autoReplenishment) {
-          const amountToAdd = (amount * ar.percentage) / 100;
-          amount -= amountToAdd;
-
-          await goalRepository.update(ar.goal.id, {
-            currentAmount: ar.goal.currentAmount + amountToAdd,
-          });
+          if (amount > 0) {
+            const amountToAdd = (amount * ar.percentage) / 100;
+            amount -= amountToAdd;
+            await goalRepository.update(ar.goal.id, {
+              currentAmount: ar.goal.currentAmount + amountToAdd,
+            });
+          }
         }
       }
 
